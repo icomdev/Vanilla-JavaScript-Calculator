@@ -9,10 +9,10 @@
   <script src="script.js" defer></script>
 </head>
 <body>
-  <div class="calculator-grid">
-    <div class="output">
-      <span data-memory-indicator class="memory-indicator" aria-label="Memory contains a value" hidden>M</span>
-      <div data-history class="history" aria-live="polite"></div>
+  <div class="calculator-grid" role="group" aria-label="Calculator">
+    <div class="output" aria-live="polite" aria-atomic="true">
+      <span data-memory-indicator class="memory-indicator" aria-label="Memory state" hidden>M</span>
+      <div data-history class="history" aria-label="History"></div>
       <div data-previous-operand class="previous-operand"></div>
       <div data-current-operand class="current-operand"></div>
     </div>
@@ -20,26 +20,26 @@
     <button data-memory-recall aria-label="Recall memory">MR</button>
     <button data-memory-clear aria-label="Clear memory">MC</button>
     <button data-percent aria-label="Percent">%</button>
-    <button data-all-clear>AC</button>
-    <button data-delete>DEL</button>
-    <button data-backspace>⌫</button>
-    <button data-sign-toggle aria-label="Toggle sign">+/-</button>
-    <button data-operation>÷</button>
+    <button data-all-clear aria-label="All clear">AC</button>
+    <button data-delete aria-label="Delete last digit">DEL</button>
+    <button data-backspace aria-label="Backspace">⌫</button>
+    <button data-sign-toggle aria-label="Negate">+/-</button>
+    <button data-operation aria-label="Divide">÷</button>
     <button data-number>1</button>
     <button data-number>2</button>
     <button data-number>3</button>
-    <button data-operation>*</button>
+    <button data-operation aria-label="Multiply">*</button>
     <button data-number>4</button>
     <button data-number>5</button>
     <button data-number>6</button>
-    <button data-operation>+</button>
+    <button data-operation aria-label="Add">+</button>
     <button data-number>7</button>
     <button data-number>8</button>
     <button data-number>9</button>
-    <button data-operation>-</button>
-    <button data-number>.</button>
+    <button data-operation aria-label="Subtract">-</button>
+    <button data-number aria-label="Decimal point">.</button>
     <button data-number>0</button>
-    <button data-equals class="span-two">=</button>
+    <button data-equals class="span-two" aria-label="Equals">=</button>
   </div>
 </body>
 </html>

@@ -7,10 +7,15 @@ const path = require('node:path')
 // Exercise the real event handlers with lightweight DOM elements from index.html.
 function setup() {
   const html = readFileSync(path.join(__dirname, '../index.html'), 'utf8')
-  const elements = [...html.matchAll(/<(button|div|span)\b([^>]*)>([^<]*)/g)].map(([, , attributes, text]) => ({
+  const elements = [...html.matchAll(/<(button|div|span)\b([^>]*)>([^<]*)/g)].map(([, tagName, attributes, text]) => ({
+    tagName,
     attributes,
     innerText: text.trim(),
     hidden: /\bhidden\b/.test(attributes),
+    getAttribute(name) {
+      const match = this.attributes.match(new RegExp('(?:^|\\s)' + name + '="([^"]*)"'))
+      return match ? match[1] : null
+    },
     addEventListener(event, handler) { this[event] = handler }
   }))
   const document = {
@@ -26,6 +31,7 @@ function setup() {
   }
   vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), { document })
   return {
+    elements,
     click(attribute) { document.querySelector(`[data-${attribute}]`).click() },
     type(value) {
       for (const digit of value) {
@@ -139,4 +145,61 @@ test('decimal input works after storing a computed result', () => {
   app.click('memory-add')
   app.type('.5')
   assert.equal(app.display(), '3.5')
+})
+
+test('calculator has a named group and one polite atomic output region', () => {
+  const { elements } = setup()
+  const container = elements.find(element => element.getAttribute('class') === 'calculator-grid')
+  assert.equal(container.getAttribute('role'), 'group')
+  assert.equal(container.getAttribute('aria-label'), 'Calculator')
+  const liveRegions = elements.filter(element => element.getAttribute('aria-live'))
+  assert.equal(liveRegions.length, 1, 'avoid nested live regions announcing history twice')
+  assert.equal(liveRegions[0].getAttribute('class'), 'output')
+  assert.equal(liveRegions[0].getAttribute('aria-live'), 'polite')
+  assert.equal(liveRegions[0].getAttribute('aria-atomic'), 'true')
+})
+
+test('all buttons have accessible names and symbols have descriptive labels', () => {
+  const { elements } = setup()
+  const symbolicLabels = {
+    'M+': 'Add to memory', MR: 'Recall memory', MC: 'Clear memory',
+    '%': 'Percent', AC: 'All clear', DEL: 'Delete last digit',
+    '⌫': 'Backspace', '+/-': 'Negate', '÷': 'Divide', '*': 'Multiply',
+    '+': 'Add', '-': 'Subtract', '.': 'Decimal point', '=': 'Equals'
+  }
+  const buttons = elements.filter(element => element.tagName === 'button')
+  assert.ok(buttons.length > 0)
+  for (const button of buttons) {
+    const label = button.getAttribute('aria-label')
+    assert.ok((label || button.innerText).trim(), 'each button needs an accessible name')
+    if (!/^\d$/.test(button.innerText)) {
+      assert.ok(symbolicLabels[button.innerText], `uncovered symbol: ${button.innerText}`)
+      assert.equal(label, symbolicLabels[button.innerText])
+    }
+  }
+})
+
+test('memory and history labels persist through calculation and clear', () => {
+  const app = setup()
+  const memory = app.elements.find(element => element.attributes.includes('data-memory-indicator'))
+  const history = app.elements.find(element => element.attributes.includes('data-history'))
+  const checkLabels = () => {
+    assert.equal(memory.getAttribute('aria-label'), 'Memory state')
+    assert.equal(history.getAttribute('aria-label'), 'History')
+  }
+  checkLabels()
+  app.type('6')
+  app.click('memory-add')
+  app.operation('*')
+  app.type('7')
+  app.click('equals')
+  assert.equal(app.display(), '42')
+  assert.equal(history.innerText, '6*7=42')
+  assert.equal(memory.hidden, false)
+  checkLabels()
+  app.click('all-clear')
+  app.click('memory-clear')
+  assert.equal(history.innerText, '')
+  assert.equal(memory.hidden, true)
+  checkLabels()
 })
