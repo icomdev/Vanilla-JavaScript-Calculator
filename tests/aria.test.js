@@ -6,6 +6,15 @@ const { test } = require('node:test')
 
 const html = readFileSync(join(__dirname, '../index.html'), 'utf8')
 
+// Coverage matrix (#50), inline to preserve the new-file-only scope:
+// | Matrix cell | Test name |
+// | --- | --- |
+// | Container role + label | calculator is an ARIA group with a nonempty label |
+// | Live output + atomic updates | output announces updates politely and atomically |
+// | Labelled controls + text-only digits | every button has a nonempty aria-label or text content |
+// | Memory indicator semantics | memory indicator has the img role |
+// Static initial-document contracts; no runtime transitions are involved.
+
 // Parse the static markup without a browser or external dependencies.
 function parseAttributes(source) {
   return Object.fromEntries([...source.matchAll(
