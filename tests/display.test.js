@@ -130,10 +130,10 @@ test('editing across a grouping boundary preserves raw digits and decimal zeros'
 
 test('sign toggling preserves grouped digits and fractional zeros', () => {
   const calculator = createCalculator()
-  calculator.press(...'001234.0500', '+/-')
+  calculator.press(...'001234.0500', '±')
   calculator.expect('-1,234.0500')
   assert.equal(calculator.state.currentOperand, '-001234.0500')
-  calculator.press('+/-')
+  calculator.press('±')
   calculator.expect('1,234.0500')
   assert.equal(calculator.state.currentOperand, '001234.0500')
 })

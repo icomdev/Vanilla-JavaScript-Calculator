@@ -81,7 +81,7 @@ for (const { name: operands, numerator, denominator } of zeroCases) {
       run(app)
       assertError(app)
       // Non-computing operations must not turn the error into a numeric display.
-      app.press('%', '+/-')
+      app.press('%', '±')
       assertError(app)
     })
   }

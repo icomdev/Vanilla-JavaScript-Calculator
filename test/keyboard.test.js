@@ -121,7 +121,7 @@ test('unrelated keys and browser shortcuts do not change state or prevent defaul
     assert.equal(app.key(key), false)
   }
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
-    for (const key of ['1', '+', '%', 'Enter', 'Escape', 'Backspace']) {
+    for (const key of ['1', '+', '%', 's', 'Enter', 'Escape', 'Backspace']) {
       assert.equal(app.key(key, { [modifier]: true }), false)
     }
   }
@@ -227,14 +227,14 @@ test('every mapped key focuses its corresponding button', () => {
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
     ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
-    ['Backspace', 'DEL'], ['Escape', 'AC']
+    ['Backspace', 'DEL'], ['Escape', 'AC'], ['s', '±']
   ]) {
     app.key(key)
     assert.equal(app.focused(), app.button(label), key)
   }
   app.key('Tab')
   app.key('1', { ctrlKey: true })
-  assert.equal(app.focused(), app.button('AC'))
+  assert.equal(app.focused(), app.button('±'))
 })
 
 test('long AC clears memory as well as the calculation', () => {
@@ -293,4 +293,40 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
   assert.equal(app.display(), '4')
   app.button('MR').click()
   assert.equal(app.display(), '0')
+})
+
+// Each state exercises both real input paths, including focus/click parity.
+for (const [state, setupKeys, expected, pending] of [
+  ['positive entry', ['1', '2', '.', '5'], '-12.5', ''],
+  ['negative entry', ['-', '4'], '4', ''],
+  ['last result', ['8', '+', '2', '='], '-10', ''],
+  ['empty state', [], '', ''],
+  ['zero entry', ['0'], '0', ''],
+  ['empty pending entry', ['8', '+'], '', '8 +'],
+  ['mid-expression entry', ['8', '+', '2'], '-2', '8 +'],
+  ['error', ['8', '/', '0', '='], 'Cannot divide by zero', '']
+]) {
+  for (const input of ['button', 'keyboard']) {
+    test(`sign toggle via ${input} in ${state}`, () => {
+      const app = setup()
+      for (const key of setupKeys) app.key(key)
+      if (input === 'button') app.button('±').click()
+      else {
+        assert.equal(app.key('s'), true)
+        assert.equal(app.focused(), app.button('±'))
+      }
+      assert.equal(app.button('±').clicks, 1)
+      assert.equal(app.display(), expected)
+      assert.equal(app.previous(), pending)
+    })
+  }
+}
+
+test('sign toggle button has the requested id and visible symbol', () => {
+  const html = readFileSync(`${__dirname}/../index.html`, 'utf8')
+  const buttons = [...html.matchAll(/<button\b([^>]*)>([^<]+)<\/button>/g)]
+    .filter(([, attributes]) => /\bid="sign-toggle"/.test(attributes))
+  assert.equal(buttons.length, 1)
+  assert.match(buttons[0][1], /\bdata-sign-toggle\b/)
+  assert.equal(buttons[0][2], '±')
 })

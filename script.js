@@ -112,12 +112,12 @@ class Calculator {
 
   /**
    * Toggle the leading minus without reformatting the entry digits.
-   * Leave results, unparseable entries, and zero unchanged.
+   * Apply to entries and results; leave unparseable entries and zero unchanged.
    * @returns {void}
    */
   toggleSign() {
     const value = parseFloat(this.currentOperand)
-    if (this.isResult || isNaN(value) || value === 0) return
+    if (isNaN(value) || value === 0) return
     const entry = this.currentOperand.toString()
     this.currentOperand = entry.startsWith('-') ? entry.slice(1) : `-${entry}`
   }
@@ -390,6 +390,7 @@ const keyboardButtons = new Map(
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
 keyboardButtons.set('%', percentButton)
+keyboardButtons.set('s', signToggleButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
