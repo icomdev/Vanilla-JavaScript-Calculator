@@ -15,6 +15,16 @@ class Calculator {
     this.currentOperand = this.currentOperand.toString().slice(0, -1)
   }
 
+  backspace() {
+    const entry = this.currentOperand.toString()
+    if (entry === '' || entry === '-' || entry === '-0') return
+    if (entry.length === 1) {
+      this.currentOperand = '0'
+      return
+    }
+    this.currentOperand = entry.slice(0, -1)
+  }
+
   appendNumber(number) {
     if (number === '.' && this.currentOperand.includes('.')) return
     this.currentOperand = this.currentOperand.toString() + number.toString()
@@ -90,6 +100,7 @@ const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
+const backspaceButton = document.querySelector('[data-backspace]')
 const allClearButton = document.querySelector('[data-all-clear]')
 const previousOperandTextElement = document.querySelector('[data-previous-operand]')
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
@@ -122,5 +133,10 @@ allClearButton.addEventListener('click', button => {
 
 deleteButton.addEventListener('click', button => {
   calculator.delete()
+  calculator.updateDisplay()
+})
+
+backspaceButton.addEventListener('click', () => {
+  calculator.backspace()
   calculator.updateDisplay()
 })
