@@ -19,6 +19,19 @@ class Calculator {
     this.lastOperand = undefined
   }
 
+  clearEntry() {
+    this.currentOperand = ''
+    this.isResult = false
+    this.errorMessage = ''
+    this.lastOperation = undefined
+    this.lastOperand = undefined
+  }
+
+  fullClear() {
+    this.clear()
+    this.clearMemory()
+  }
+
   addToMemory() {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
@@ -225,6 +238,25 @@ allClearButton.addEventListener('click', button => {
   calculator.updateDisplay()
 })
 
+// A short AC click keeps its existing behavior; holding AC also resets memory.
+let allClearTimer
+function cancelAllClearHold() {
+  clearTimeout(allClearTimer)
+  allClearTimer = undefined
+}
+allClearButton.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || event.isPrimary === false) return
+  cancelAllClearHold()
+  allClearTimer = setTimeout(() => {
+    allClearTimer = undefined
+    calculator.fullClear()
+    calculator.updateDisplay()
+  }, 700)
+})
+allClearButton.addEventListener('pointerleave', cancelAllClearHold)
+document.addEventListener('pointerup', cancelAllClearHold)
+document.addEventListener('pointercancel', cancelAllClearHold)
+
 deleteButton.addEventListener('click', button => {
   calculator.delete()
   calculator.updateDisplay()
@@ -275,7 +307,14 @@ document.addEventListener('keydown', event => {
 
   // In particular, Enter must not also activate the currently focused button.
   event.preventDefault()
-  button.click()
+  button.focus({ preventScroll: true })
+  if (event.key === 'Escape') {
+    if (event.shiftKey) calculator.fullClear()
+    else calculator.clearEntry()
+    calculator.updateDisplay()
+  } else {
+    button.click()
+  }
 })
 
 percentButton.addEventListener('click', () => {
