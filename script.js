@@ -44,6 +44,12 @@ class Calculator {
     if (this.currentOperand === '-') this.currentOperand = ''
   }
 
+  percent() {
+    const value = parseFloat(this.currentOperand)
+    if (!Number.isFinite(value)) return
+    this.currentOperand = (value / 100).toString()
+  }
+
   toggleSign() {
     const value = parseFloat(this.currentOperand)
     if (this.isResult || isNaN(value) || value === 0) return
@@ -145,6 +151,7 @@ class Calculator {
 
   getDisplayNumber(number) {
     const stringNumber = number.toString()
+    if (/e/i.test(stringNumber)) return stringNumber
     const integerDigits = parseFloat(stringNumber.split('.')[0])
     const decimalDigits = stringNumber.split('.')[1]
     let integerDisplay
@@ -266,4 +273,11 @@ document.addEventListener('keydown', event => {
 
   // In particular, Enter must not also activate the currently focused button.
   event.preventDefault()
-  button.click()})
+  button.click()
+})
+
+const percentButton = document.querySelector('[data-percent]')
+percentButton.addEventListener('click', () => {
+  calculator.percent()
+  calculator.updateDisplay()
+})

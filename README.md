@@ -16,6 +16,7 @@ Open `index.html` in a browser to use the calculator.
 | `7` | Adds 7 to the current number. |
 | `8` | Adds 8 to the current number. |
 | `9` | Adds 9 to the current number. |
+| `%` | Divides the current entry by 100; repeat to divide again. Empty entries are unchanged. Preserves pending operations (200 + 10 % = 200.1). |
 | `=` | Shows the result; press again to repeat the last operator and operand on the displayed value (e.g. `5 + 3 = =` gives `11`). |
 | `AC` | Clears both numbers, the selected operator, and the remembered operation for repeated equals. |
 | `DEL` | Removes the last character of the current number. |
@@ -26,7 +27,6 @@ Open `index.html` in a browser to use the calculator.
 | `MC` | Clears the memory. |
 
 The clear button is labeled `AC`, not `C`. There is no `%` button.
-
 ## Keyboard
 
 The keyboard uses the same actions as the on-screen buttons:

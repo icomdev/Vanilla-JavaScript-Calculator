@@ -24,6 +24,7 @@ function createCalculator() {
     '[data-equals]': button('='),
     '[data-delete]': button('DEL'),
     '[data-backspace]': button('⌫'),
+    '[data-percent]': button('%'),
     '[data-sign-toggle]': button('+/-'),
     '[data-memory-add]': button('M+'),
     '[data-memory-recall]': button('MR'),
