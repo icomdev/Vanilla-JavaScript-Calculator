@@ -1,5 +1,9 @@
 # Vanilla JavaScript Calculator
 
+[![CI](https://github.com/icomdev/Vanilla-JavaScript-Calculator/actions/workflows/ci.yml/badge.svg)](https://github.com/icomdev/Vanilla-JavaScript-Calculator/actions/workflows/ci.yml)
+
+**Prerequisites:** Node.js 18+ for tests.
+
 Open `index.html` in a browser to use the calculator.
 
 ## Buttons
