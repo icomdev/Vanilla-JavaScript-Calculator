@@ -21,7 +21,16 @@ class Calculator {
   }
 
   chooseOperation(operation) {
-    if (this.currentOperand === '') return
+    // Minus starts a signed operand; other operators replace a pending one.
+    if (this.currentOperand === '' || this.currentOperand === '-') {
+      if (operation === '-') {
+        this.currentOperand = '-'
+      } else if (this.previousOperand !== '') {
+        this.operation = operation
+        this.currentOperand = ''
+      }
+      return
+    }
     if (this.previousOperand !== '') {
       this.compute()
     }
@@ -62,7 +71,7 @@ class Calculator {
     const decimalDigits = stringNumber.split('.')[1]
     let integerDisplay
     if (isNaN(integerDigits)) {
-      integerDisplay = ''
+      integerDisplay = stringNumber.startsWith('-') ? '-' : ''
     } else {
       integerDisplay = integerDigits.toLocaleString('en', { maximumFractionDigits: 0 })
     }
