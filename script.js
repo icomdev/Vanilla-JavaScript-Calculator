@@ -1,4 +1,13 @@
 class Calculator {
+  /**
+   * Connect display elements, initialize memory, and clear calculation state.
+   * Display contents are rendered separately by updateDisplay().
+   * @param {HTMLElement} previousOperandTextElement - Pending operand display.
+   * @param {HTMLElement} currentOperandTextElement - Current entry/result display.
+   * @param {HTMLElement} memoryIndicatorElement - Indicator hidden when memory is zero.
+   * @param {HTMLElement} historyTextElement - Last recorded expression display.
+   * @returns {Calculator} The initialized calculator instance.
+   */
   constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement) {
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
@@ -8,6 +17,11 @@ class Calculator {
     this.clear()
   }
 
+  /**
+   * Reset operands, operation, history, errors, and repeated-equals state.
+   * Preserve memory; rendering is left to updateDisplay().
+   * @returns {void}
+   */
   clear() {
     this.history = ''
     this.currentOperand = ''
@@ -19,6 +33,11 @@ class Calculator {
     this.lastOperand = undefined
   }
 
+  /**
+   * Clear the current entry, error, result flag, and repeated-equals state.
+   * Preserve the pending operand/operator, history, and memory.
+   * @returns {void}
+   */
   clearEntry() {
     this.currentOperand = ''
     this.isResult = false
@@ -27,11 +46,20 @@ class Calculator {
     this.lastOperand = undefined
   }
 
+  /**
+   * Reset calculation state and memory without rendering the display.
+   * @returns {void}
+   */
   fullClear() {
     this.clear()
     this.clearMemory()
   }
 
+  /**
+   * Add the parsed current entry to memory without changing the entry.
+   * Ignore non-finite entries and totals that would make memory non-finite.
+   * @returns {void}
+   */
   addToMemory() {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
@@ -39,15 +67,29 @@ class Calculator {
     if (Number.isFinite(total)) this.memory = total
   }
 
+  /**
+   * Replace the current entry with the memory value as a string.
+   * Clear calculation state first if an error is active; otherwise preserve it.
+   * @returns {void}
+   */
   recallMemory() {
     if (this.errorMessage) this.clear()
     this.currentOperand = this.memory.toString()
   }
 
+  /**
+   * Set memory to zero without changing calculation state or rendering.
+   * @returns {void}
+   */
   clearMemory() {
     this.memory = 0
   }
 
+  /**
+   * Remove the last character, also removing a remaining lone minus sign.
+   * Clear calculation state instead when an error is active.
+   * @returns {void}
+   */
   delete() {
     if (this.errorMessage) {
       this.clear()
@@ -57,12 +99,22 @@ class Calculator {
     if (this.currentOperand === '-') this.currentOperand = ''
   }
 
+  /**
+   * Divide a finite current entry by 100, preserving pending calculation state.
+   * Ignore empty, invalid, or non-finite entries.
+   * @returns {void}
+   */
   percent() {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
     this.currentOperand = (value / 100).toString()
   }
 
+  /**
+   * Toggle the leading minus without reformatting the entry digits.
+   * Leave results, unparseable entries, and zero unchanged.
+   * @returns {void}
+   */
   toggleSign() {
     const value = parseFloat(this.currentOperand)
     if (this.isResult || isNaN(value) || value === 0) return
@@ -70,6 +122,11 @@ class Calculator {
     this.currentOperand = entry.startsWith('-') ? entry.slice(1) : `-${entry}`
   }
 
+  /**
+   * Remove one character, replacing a single-character entry with zero.
+   * Unlike delete(), leave empty entries, a lone minus, and negative zero alone.
+   * @returns {void}
+   */
   backspace() {
     const entry = this.currentOperand.toString()
     if (entry === '' || entry === '-' || entry === '-0') return
@@ -80,6 +137,13 @@ class Calculator {
     this.currentOperand = entry.slice(0, -1)
   }
 
+  /**
+   * Append a digit or decimal point, rejecting a second decimal point.
+   * Clear errors first; digits start fresh after a result, but a decimal extends it.
+   * Prefix a decimal point with zero only when the entry is empty.
+   * @param {string|number} number - Entry character; decimal points must be strings.
+   * @returns {void}
+   */
   appendNumber(number) {
     if (this.errorMessage) this.clear()
     if (this.isResult) {
@@ -94,6 +158,13 @@ class Calculator {
       : currentOperand + number.toString()
   }
 
+  /**
+   * Select an operator, computing a pending expression first when possible.
+   * Minus can start a signed entry; other operators can replace a pending one.
+   * Clear an active error without selecting the requested operation.
+   * @param {string} operation - Operator symbol: +, -, *, or ÷.
+   * @returns {void}
+   */
   chooseOperation(operation) {
     if (this.errorMessage) {
       this.clear()
@@ -119,6 +190,14 @@ class Calculator {
     this.isResult = false
   }
 
+  /**
+   * Compute the pending expression, or repeat the last operator and operand.
+   * Ignore invalid operands or unsupported operators; clear an existing error.
+   * Division by zero clears calculation state and sets an error, preserving memory.
+   * On success, store repeat state and mark the current entry as a result.
+   * @param {boolean} [recordHistory=false] - Record a successful, non-repeated expression.
+   * @returns {void}
+   */
   compute(recordHistory = false) {
     if (this.errorMessage) {
       this.clear()
@@ -162,6 +241,12 @@ class Calculator {
     this.isResult = true
   }
 
+  /**
+   * Group the integer part in English format while preserving decimal digits.
+   * Pass scientific notation through unchanged; preserve empty or lone-minus entries.
+   * @param {string|number} number - Operand or result to format without changing state.
+   * @returns {string} Display text, including any entered trailing decimal point.
+   */
   getDisplayNumber(number) {
     const stringNumber = number.toString()
     if (/e/i.test(stringNumber)) return stringNumber
@@ -180,6 +265,11 @@ class Calculator {
     }
   }
 
+  /**
+   * Render memory visibility, history, current entry/error, and pending expression.
+   * Clear the previous-operand display when no operation is pending.
+   * @returns {void}
+   */
   updateDisplay() {
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
@@ -195,6 +285,7 @@ class Calculator {
 }
 
 
+// Display and control lookup for event wiring.
 const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
 const percentButton = document.querySelector('[data-percent]')
@@ -212,8 +303,10 @@ const currentOperandTextElement = document.querySelector('[data-current-operand]
 
 const historyTextElement = document.querySelector('[data-history]')
 
+// Shared calculator instance used by all input handlers.
 const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement)
 
+// Numeric entry and arithmetic operation button events.
 numberButtons.forEach(button => {
   button.addEventListener('click', () => {
     calculator.appendNumber(button.innerText)
@@ -228,6 +321,7 @@ operationButtons.forEach(button => {
   })
 })
 
+// Equals and short-click clear events.
 equalsButton.addEventListener('click', button => {
   calculator.compute(true)
   calculator.updateDisplay()
@@ -257,6 +351,7 @@ allClearButton.addEventListener('pointerleave', cancelAllClearHold)
 document.addEventListener('pointerup', cancelAllClearHold)
 document.addEventListener('pointercancel', cancelAllClearHold)
 
+// Entry editing button events: delete, backspace, and sign toggle.
 deleteButton.addEventListener('click', button => {
   calculator.delete()
   calculator.updateDisplay()
@@ -272,6 +367,7 @@ signToggleButton.addEventListener('click', () => {
   calculator.updateDisplay()
 })
 
+// Memory button events: add, recall, and clear.
 memoryAddButton.addEventListener('click', () => {
   calculator.addToMemory()
   calculator.updateDisplay()
@@ -288,6 +384,7 @@ memoryClearButton.addEventListener('click', () => {
 })
 
 // Reuse button click handlers so keyboard and pointer input stay in sync.
+// Keyboard aliases and dispatch, including entry/full-clear shortcuts.
 const keyboardButtons = new Map(
   [...numberButtons, ...operationButtons].map(button => [button.innerText, button])
 )
@@ -317,6 +414,7 @@ document.addEventListener('keydown', event => {
   }
 })
 
+// Percent button event, also invoked by the keyboard alias.
 percentButton.addEventListener('click', () => {
   calculator.percent()
   calculator.updateDisplay()
