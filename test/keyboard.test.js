@@ -98,11 +98,52 @@ test('unrelated keys and browser shortcuts do not change state or prevent defaul
     assert.equal(app.key(key), false)
   }
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
-    for (const key of ['1', '+', 'Enter', 'Escape', 'Backspace']) {
+    for (const key of ['1', '+', '%', 'Enter', 'Escape', 'Backspace']) {
       assert.equal(app.key(key, { [modifier]: true }), false)
     }
   }
   assert.equal(app.display(), '7')
   assert.equal(app.key('+', { shiftKey: true }), true)
   assert.equal(app.previous(), '7 +')
+})
+
+
+test('percent key reuses the button handler, including repeated presses', () => {
+  const keyboard = setup()
+  const pointer = setup()
+  for (const app of [keyboard, pointer]) {
+    for (const key of ['2', '0', '0', '+', '1', '0']) app.key(key)
+  }
+  for (const expected of ['0.1', '0.001']) {
+    assert.equal(keyboard.key('%', { shiftKey: true }), true)
+    pointer.button('%').click()
+    assert.equal(keyboard.display(), expected)
+    assert.equal(keyboard.display(), pointer.display())
+    assert.equal(keyboard.previous(), '200 +')
+    assert.equal(keyboard.previous(), pointer.previous())
+  }
+  assert.equal(keyboard.button('%').clicks, 2)
+})
+
+test('percent key leaves empty entries and pending operations unchanged', () => {
+  const app = setup()
+  assert.equal(app.key('%'), true)
+  assert.equal(app.display(), '')
+  assert.equal(app.previous(), '')
+  app.key('2')
+  app.key('+')
+  assert.equal(app.key('%'), true)
+  assert.equal(app.display(), '')
+  assert.equal(app.previous(), '2 +')
+  assert.equal(app.button('%').clicks, 2)
+})
+
+test('percent key leaves an error state untouched', () => {
+  const app = setup()
+  for (const key of ['1', '/', '0', '=']) app.key(key)
+  assert.equal(app.display(), 'Cannot divide by zero')
+  assert.equal(app.key('%'), true)
+  assert.equal(app.display(), 'Cannot divide by zero')
+  assert.equal(app.previous(), '')
+  assert.equal(app.button('%').clicks, 1)
 })
