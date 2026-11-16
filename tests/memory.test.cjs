@@ -165,11 +165,11 @@ test('every button has a readable name, with explicit names for symbolic control
   const symbolicNames = new Map([
     ['M+', 'Add to memory'], ['MR', 'Recall memory'], ['MC', 'Clear memory'],
     ['%', 'Percent'], ['AC', 'All clear'], ['DEL', 'Delete last digit'],
-    ['⌫', 'Backspace'], ['+/-', 'Negate'], ['÷', 'Divide'], ['*', 'Multiply'],
+    ['√', 'Square root'], ['⌫', 'Backspace'], ['+/-', 'Negate'], ['÷', 'Divide'], ['*', 'Multiply'],
     ['+', 'Add'], ['-', 'Subtract'], ['.', 'Decimal point'], ['=', 'Equals']
   ])
   const buttons = elements.filter(element => element.tagName === 'button')
-  assert.equal(buttons.length, 24)
+  assert.equal(buttons.length, 25)
   for (const button of buttons) {
     const label = button.getAttribute('aria-label')
     assert.ok((label || button.innerText).trim(), 'Every button needs an accessible name')
