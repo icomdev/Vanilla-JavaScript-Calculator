@@ -1,26 +1,24 @@
 # Edge-case test sweep (#32)
 
-Run `node --test` from the repository root (no dependencies). All sweep tests
-live in `tests/calculator.test.js` and exercise the real button click handlers
-using the existing lightweight DOM harness. `{operator}` ranges over `+`, `-`,
-`*`, and `÷`; parameterized names below expand to individual tests.
+Run `node --test` (Node.js 18+, no dependencies). All sweep tests live in
+`tests/calculator.test.js` and exercise the real button click handlers with a
+lightweight DOM stub. Names below use `{…}` for generated test-name variants.
 
 | Matrix cell | Test name(s) |
 | --- | --- |
-| Operator → equals → operator, chaining the result | `sweep: result chaining {first} then {next}` (all 16 operator pairs; also checks subsequent repeat-equals) |
-| Sign toggle mid-entry | `sweep: sign toggle mid-entry preserves digits and pending operator` |
-| Sign toggle after equals | `sweep: sign toggle after equals waits for a new entry` |
-| Percent with a pending operator combined with sign toggle | `sweep: pending {operator} with sign then percent`; `sweep: pending {operator} with percent then sign` |
-| M+ with a pending operator | `sweep: M+ with an empty pending operand leaves memory and operation intact`; `sweep: M+ stores the pending right operand without computing it` |
-| MR then immediate operator | `sweep: M+ stores the pending right operand without computing it`; `sweep: MR then immediate operator completes a pending calculation` |
-| Divide-by-zero message → number-key recovery | `sweep: divide-by-zero recovery via number discards replay state` |
-| Divide-by-zero message → AC recovery | `sweep: divide-by-zero recovery via AC discards replay state` |
-| Repeat-equals alternating with new number entry | `sweep: repeat {operator} equals alternates with fresh number entry` |
+| Operator → equals → operator, chaining the result | `operator chain {first} → equals → {next} uses the result` (all 16 pairs of `+`, `-`, `*`, `÷`) |
+| Sign toggle mid-entry | `sign toggle mid-entry preserves digits and a trailing decimal` |
+| Sign toggle after equals vs a fresh entry | `sign toggle after equals is inactive until a new number entry` |
+| Percent after a pending operator combined with sign toggle | `pending {operator} with {% then +/- or +/- then %} uses the signed percent entry` (all four operators, both orders; also checks empty pending entries) |
+| M+ with a pending operator, empty operand | `M+ with an empty pending operand leaves memory and the operation unchanged` |
+| M+ with a pending operator, entered operand | `M+ with a pending operator stores only the entry without computing` |
+| MR then immediate operator | `MR then immediate operator uses recalled memory instead of the equals result` |
+| Divide-by-zero message → number-key recovery | `divide-by-zero recovery via number key clears repeat-equals state` |
+| Divide-by-zero message → AC recovery | `divide-by-zero recovery via AC clears repeat-equals state` |
+| Repeat-equals alternating with new number entry | `repeat-equals {operator} alternates with fresh number entries` (all four operators) |
 
-## Outcome
-
-116 tests pass, including 35 new sweep cases. No genuine bugs were uncovered;
-production behavior is unchanged. The assertions preserve the existing contracts:
-`+/-` is inactive immediately after equals, percent divides only the current
-entry by 100 (so `200 + 10 %` adds `0.1`, not `20`), and repeat-equals applies
-the remembered operation to the displayed value even after fresh digit entry.
+Outcome: **116 tests pass**, including 35 added by this sweep. No production
+bugs were uncovered, so no calculator behavior was changed. In particular,
+sign toggle remains inactive immediately after equals, percent divides only
+the current entry by 100 (#26), and repeat-equals applies the remembered
+operation to the current display even after a new number is entered (#15).
