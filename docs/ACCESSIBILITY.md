@@ -97,3 +97,16 @@ include tabbing through every button, activating controls with Space, comparing
 shortcuts with pointer actions, and listening to result, error, and memory
 updates in a browser/screen-reader combination. This statement does not claim
 those manual checks have been completed.
+
+## Test references
+
+Run `node --test` from the repository root (Node.js 18+).
+
+| Evidence | What it checks |
+| --- | --- |
+| [`tests/memory.test.cjs`](../tests/memory.test.cjs) | Named calculator group, single atomic polite live region, readable button names and explicit symbolic labels, memory/history labels, and indicator visibility. |
+| [`test/keyboard.test.js`](../test/keyboard.test.js) | Shortcut/button-handler parity, focus targets, ignored keys/modifiers, Escape versus Shift+Escape, and AC hold/reset behavior. |
+
+These checks inspect markup attributes and use DOM stubs for interaction; they
+are not browser or assistive-technology tests. Native Tab/Space behavior still
+needs manual verification, alongside the checks listed above.
