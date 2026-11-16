@@ -25,6 +25,7 @@ function createCalculator() {
   elements.set('[data-current-operand]', [current])
   vm.runInNewContext(readFileSync(`${__dirname}/../script.js`, 'utf8'), {
     document: {
+      addEventListener() {},
       querySelectorAll: selector => elements.get(selector),
       querySelector: selector => elements.get(selector)[0]
     }
