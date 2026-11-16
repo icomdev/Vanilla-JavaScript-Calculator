@@ -97,3 +97,48 @@ test('normal arithmetic and chained operations still work', () => {
   calculator.press('AC', '1', '.', '5', '÷', '0', '.', '5', '=')
   assert.equal(calculator.current.innerText, '3')
 })
+
+
+test('percent divides the entry repeatedly, including scientific notation', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '0', '%')
+  assert.equal(calculator.current.innerText, '0.5')
+  calculator.press('%')
+  assert.equal(calculator.current.innerText, '0.005')
+  calculator.press('%', '%')
+  assert.equal(calculator.current.innerText, '5e-7')
+  calculator.press('%')
+  assert.equal(calculator.current.innerText, '5e-9')
+})
+
+test('percent with no entry leaves the display and pending operation unchanged', () => {
+  const calculator = createCalculator()
+  calculator.press('%')
+  assert.equal(calculator.current.innerText, '')
+  calculator.press('2', '0', '0', '+', '%', '%')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '200 +')
+  calculator.press('1', '0', '%')
+  assert.equal(calculator.current.innerText, '0.1')
+  assert.equal(calculator.previous.innerText, '200 +')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '200.1')
+})
+
+test('percent supports zero, negative entries, and computed results', () => {
+  const calculator = createCalculator()
+  calculator.press('0', '%')
+  assert.equal(calculator.current.innerText, '0')
+  calculator.press('AC', '5', '+/-', '%')
+  assert.equal(calculator.current.innerText, '-0.05')
+  calculator.press('AC', '2', '5', '*', '2', '=', '%')
+  assert.equal(calculator.current.innerText, '0.5')
+  calculator.press('+', '1', '=')
+  assert.equal(calculator.current.innerText, '1.5')
+})
+
+test('percent leaves an error unchanged', () => {
+  const calculator = createCalculator()
+  calculator.press('1', '÷', '0', '=', '%')
+  assert.equal(calculator.current.innerText, message)
+})

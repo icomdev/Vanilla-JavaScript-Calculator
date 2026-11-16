@@ -21,12 +21,12 @@ Open `index.html` in a browser to use the calculator.
 | `-` | Subtracts the next number. |
 | `*` | Multiplies by the next number. |
 | `÷` | Divides by the next number. |
+| `%` | Divides the current entry by 100; repeat to divide again. Empty entries are unchanged. Preserves pending operations (200 + 10 % = 200.1). |
 | `=` | Shows the result. |
 | `AC` | Clears both numbers and the selected operation. |
 | `DEL` | Removes the last character from the current number. |
 
-The clear button is labeled `AC`, not `C`. There are no `%`, `+/-`, or
-separate backspace buttons; `DEL` handles deleting the last character.
+The clear button is labeled `AC`, not `C`. `DEL` handles deleting the last character.
 
 ## Keyboard
 
