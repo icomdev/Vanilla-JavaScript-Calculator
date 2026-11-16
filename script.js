@@ -21,7 +21,16 @@ class Calculator {
   }
 
   chooseOperation(operation) {
-    if (this.currentOperand === '') return
+    if (this.currentOperand === '' || this.currentOperand === '-') {
+      if (operation === '-') {
+        // A minus before a number is its sign, not a new binary operator.
+        this.currentOperand = '-'
+      } else if (this.previousOperand !== '') {
+        this.operation = operation
+        this.currentOperand = ''
+      }
+      return
+    }
     if (this.previousOperand !== '') {
       this.compute()
     }
@@ -58,6 +67,7 @@ class Calculator {
 
   getDisplayNumber(number) {
     const stringNumber = number.toString()
+    if (stringNumber === '-') return '-'
     const integerDigits = parseFloat(stringNumber.split('.')[0])
     const decimalDigits = stringNumber.split('.')[1]
     let integerDisplay
