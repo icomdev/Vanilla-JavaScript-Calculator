@@ -124,3 +124,28 @@ deleteButton.addEventListener('click', button => {
   calculator.delete()
   calculator.updateDisplay()
 })
+
+// Reuse button clicks so mouse and keyboard input follow the same paths.
+const keyboardButtons = new Map([
+  ['Enter', equalsButton],
+  ['Escape', allClearButton],
+  ['Backspace', deleteButton]
+])
+
+numberButtons.forEach(button => keyboardButtons.set(button.innerText, button))
+operationButtons.forEach(button => {
+  const key = button.innerText === '÷' ? '/' : button.innerText
+  keyboardButtons.set(key, button)
+})
+
+document.addEventListener('keydown', event => {
+  // Leave browser/OS shortcuts and input method composition alone.
+  if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return
+
+  const button = keyboardButtons.get(event.key)
+  if (!button) return
+
+  // In particular, Enter must not also activate a focused button.
+  event.preventDefault()
+  button.click()
+})
