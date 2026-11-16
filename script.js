@@ -13,6 +13,8 @@ class Calculator {
     this.operation = undefined
     this.isResult = false
     this.errorMessage = ''
+    this.lastOperation = undefined
+    this.lastOperand = undefined
   }
 
   addToMemory() {
@@ -93,10 +95,12 @@ class Calculator {
       return
     }
     let computation
-    const prev = parseFloat(this.previousOperand)
-    const current = parseFloat(this.currentOperand)
+    const repeating = this.operation == null
+    const operation = repeating ? this.lastOperation : this.operation
+    const prev = parseFloat(repeating ? this.currentOperand : this.previousOperand)
+    const current = repeating ? this.lastOperand : parseFloat(this.currentOperand)
     if (isNaN(prev) || isNaN(current)) return
-    switch (this.operation) {
+    switch (operation) {
       case '+':
         computation = prev + current
         break
@@ -117,6 +121,8 @@ class Calculator {
       default:
         return
     }
+    this.lastOperation = operation
+    this.lastOperand = current
     this.currentOperand = computation
     this.operation = undefined
     this.previousOperand = ''

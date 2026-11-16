@@ -97,3 +97,73 @@ test('normal arithmetic and chained operations still work', () => {
   calculator.press('AC', '1', '.', '5', '÷', '0', '.', '5', '=')
   assert.equal(calculator.current.innerText, '3')
 })
+
+for (const [operator, first, second, third] of [
+  ['+', '8', '11', '14'],
+  ['-', '2', '-1', '-4'],
+  ['*', '15', '45', '135'],
+  ['÷', '1.6666666666666667', '0.5555555555555556', '0.1851851851851852']
+]) {
+  test(`equals repeatedly applies ${operator} with the original right operand`, () => {
+    const calculator = createCalculator()
+    calculator.press('5', operator, '3', '=')
+    assert.equal(calculator.current.innerText, first)
+    assert.equal(calculator.previous.innerText, '')
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, second)
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, third)
+  })
+}
+
+test('AC clears the remembered operation and operand', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '+', '3', '=', 'AC', '=')
+  assert.equal(calculator.current.innerText, '')
+  calculator.press('2', '=')
+  assert.equal(calculator.current.innerText, '2')
+})
+
+test('equals without a completed operation is a no-op', () => {
+  const calculator = createCalculator()
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '')
+  calculator.press('5', '=')
+  assert.equal(calculator.current.innerText, '5')
+  calculator.press('+', '=')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '5 +')
+})
+
+test('a new calculation replaces the remembered operation', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '+', '3', '=', '*', '2', '=', '=')
+  assert.equal(calculator.current.innerText, '32')
+})
+
+test('an incomplete new operation does not replay the previous operation', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '+', '3', '=', '*', '=')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '8 *')
+  calculator.press('2', '=', '=')
+  assert.equal(calculator.current.innerText, '32')
+})
+
+test('chained operations remember the final operator and decimal operand', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '+', '3', '*', '2', '.', '5', '=', '=')
+  assert.equal(calculator.current.innerText, '50')
+})
+
+test('zero is remembered as a valid right operand', () => {
+  const calculator = createCalculator()
+  calculator.press('5', '*', '0', '=', '=')
+  assert.equal(calculator.current.innerText, '0')
+})
+
+test('replay uses the current display value after editing', () => {
+  const calculator = createCalculator()
+  calculator.press('9', '+', '3', '=', 'DEL', '=')
+  assert.equal(calculator.current.innerText, '4')
+})
