@@ -78,7 +78,16 @@ class Calculator {
       this.clear()
       return
     }
-    if (this.currentOperand === '') return
+    // Minus starts a signed operand; other operators replace a pending one.
+    if (this.currentOperand === '' || this.currentOperand === '-') {
+      if (operation === '-') {
+        this.currentOperand = '-'
+      } else if (this.previousOperand !== '') {
+        this.operation = operation
+        this.currentOperand = ''
+      }
+      return
+    }
     if (this.previousOperand !== '') {
       this.compute()
       if (this.errorMessage) return
@@ -192,7 +201,6 @@ operationButtons.forEach(button => {
 
 equalsButton.addEventListener('click', button => {
   calculator.compute()
-  calculator.isResult = true
   calculator.updateDisplay()
 })
 
