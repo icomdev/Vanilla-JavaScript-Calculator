@@ -27,6 +27,7 @@ Open `index.html` in a browser to use the calculator.
 | `MC` | Clears the memory. |
 
 The clear button is labeled `AC`, not `C`.
+
 ## Quick reference
 
 The keyboard uses the same actions as the on-screen buttons:
@@ -41,26 +42,9 @@ The keyboard uses the same actions as the on-screen buttons:
 | `Backspace` | Delete the last character (DEL) |
 
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
-
-## Testing
-
-Run `node --test tests/ test/` with Node.js 18 or newer.
-
-The suites run the real script in Node's VM with lightweight DOM stubs:
-
-- `test/keyboard.test.js`: keyboard/button parity, arithmetic, deletion, clear,
-  percent, mixed pointer/keyboard input, and ignored browser shortcuts.
-- `tests/calculator.test.js`: arithmetic/chaining, division-by-zero recovery,
-  repeated equals, operator replacement, unary minus, and percent.
-- `tests/decimal.test.js`: decimal guards, arithmetic, deletion, and result editing.
-- `tests/history.test.js` and `tests/history.test.cjs`: expression recording,
-  replacement, preservation while editing/chaining, and clearing.
-- `tests/memory.test.cjs`: memory add/recall/clear, indicator state, pending
-  operations, and invalid or non-finite entries.
-
-You can also run `node --test` from the repository root to discover all tests.
-No dependencies or build step are needed. These are logic/event-handler tests,
-not browser rendering or visual tests.
+Shift is allowed (for example, to type `+` or `%`); it does not give Escape a
+different action. There are no dedicated shortcuts for memory, sign toggle, or
+the separate `⌫` button: `Backspace` invokes `DEL`.
 
 ## Layout
 
@@ -95,5 +79,35 @@ Here `/` represents `÷`, `<-` represents `⌫`, and blank cells have no button.
 The memory controls (`M+`, `MR`, `MC`) share the first button row with `%`.
 The `M` indicator sits at the upper left of the display and is hidden when
 memory is zero. The history line sits above the pending (previous) operand
-and current entry. It shows the last completed expression, is replaced by the
-next completed calculation, and is cleared by AC.
+and current entry. It records an expression when equals completes a pending
+operation, replacing the previous history entry. Repeated equals, incomplete
+equals, editing, and intermediate chained calculations leave that line unchanged.
+AC and division by zero clear it; memory is preserved.
+
+## Testing
+
+From the repository root, use Node.js 18 or newer:
+
+```sh
+node --test
+```
+
+This discovers tests in both `test/` and `tests/`. To name both directories
+explicitly, run `node --test tests/ test/`.
+
+The suites run the real script in Node's VM with lightweight DOM stubs:
+
+- `test/keyboard.test.js`: keyboard/button parity, arithmetic, deletion, clear,
+  percent, mixed pointer/keyboard input, and ignored browser shortcuts.
+- `tests/calculator.test.js`: arithmetic/chaining, division-by-zero recovery,
+  repeated equals, operator replacement, unary minus, percent, and cross-feature
+  interactions with sign toggle and memory. See the [edge-case sweep](docs/TEST-SWEEP.md)
+  for the coverage matrix.
+- `tests/decimal.test.js`: decimal guards, arithmetic, deletion, and result editing.
+- `tests/history.test.js` and `tests/history.test.cjs`: expression recording,
+  replacement, preservation while editing/chaining, and clearing.
+- `tests/memory.test.cjs`: memory add/recall/clear, indicator state, pending
+  operations, and invalid or non-finite entries.
+
+No dependencies or build step are needed. These are logic/event-handler tests,
+not browser rendering or visual tests.
