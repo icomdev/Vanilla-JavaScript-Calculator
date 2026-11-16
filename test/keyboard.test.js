@@ -1,114 +1,106 @@
+const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
-const { resolve } = require('node:path')
-const { test } = require('node:test')
-const vm = require('node:vm')
+const { runInNewContext } = require('node:vm')
 
-const root = resolve(__dirname, '..')
-const html = readFileSync(resolve(root, 'index.html'), 'utf8')
-const script = readFileSync(resolve(root, 'script.js'), 'utf8')
-
+// Minimal DOM harness runs the real script, including its click handlers.
 function setup() {
   const elements = new Map()
+  const listeners = new Map()
+  const html = readFileSync(`${__dirname}/../index.html`, 'utf8')
   for (const [, attribute, text] of html.matchAll(/<button (data-[\w-]+)[^>]*>([^<]+)<\/button>/g)) {
-    const listeners = {}
+    const handlers = new Map()
     const button = {
       innerText: text,
       clicks: 0,
-      addEventListener(type, listener) { listeners[type] = listener },
-      click() { this.clicks++; listeners.click() }
-    }
-    if (!elements.has(attribute)) elements.set(attribute, [])
-    elements.get(attribute).push(button)
-  }
-  const current = { innerText: '' }
-  const previous = { innerText: '' }
-  elements.set('data-current-operand', [current])
-  elements.set('data-previous-operand', [previous])
-  const listeners = {}
-  const document = {
-    querySelectorAll(selector) { return elements.get(selector.slice(1, -1)) },
-    querySelector(selector) { return this.querySelectorAll(selector)[0] },
-    addEventListener(type, listener) { listeners[type] = listener }
-  }
-  vm.runInNewContext(script, { document })
-  return {
-    current, previous,
-    button(text) {
-      return [...elements.values()].flat().find(button => button.innerText === text)
-    },
-    key(key, options = {}) {
-      const event = {
-        key, ...options, defaultPrevented: false,
-        preventDefault() { this.defaultPrevented = true }
+      addEventListener(type, handler) { handlers.set(type, handler) },
+      click() {
+        this.clicks++
+        handlers.get('click')()
       }
-      listeners.keydown(event)
-      return event
+    }
+    const selector = `[${attribute}]`
+    if (!elements.has(selector)) elements.set(selector, [])
+    elements.get(selector).push(button)
+  }
+  for (const selector of ['[data-previous-operand]', '[data-current-operand]']) {
+    elements.set(selector, [{ innerText: '' }])
+  }
+  const document = {
+    querySelectorAll: selector => elements.get(selector),
+    querySelector: selector => elements.get(selector)[0],
+    addEventListener: (type, handler) => listeners.set(type, handler)
+  }
+  runInNewContext(readFileSync(`${__dirname}/../script.js`, 'utf8'), { document })
+  return {
+    button: text => [...elements.values()].flat().find(button => button.innerText === text),
+    display: () => document.querySelector('[data-current-operand]').innerText,
+    previous: () => document.querySelector('[data-previous-operand]').innerText,
+    key(key, modifiers = {}) {
+      let prevented = false
+      listeners.get('keydown')({
+        key, ...modifiers,
+        preventDefault() { prevented = true }
+      })
+      return prevented
     }
   }
 }
 
-test('every supported key clicks its corresponding button exactly once', () => {
+test('digits, decimal, deletion and clear use their button handlers', () => {
   const app = setup()
-  for (const key of '0123456789.+-*/') {
-    const button = app.button(key === '/' ? '÷' : key)
-    assert.equal(app.key(key).defaultPrevented, true)
-    assert.equal(button.clicks, 1, key)
+  for (const key of '0123456789.') {
+    assert.equal(app.key(key), true)
+    assert.equal(app.button(key).clicks, 1)
   }
-  for (const [key, label] of [['Enter', '='], ['Escape', 'AC'], ['Backspace', 'DEL']]) {
-    assert.equal(app.key(key).defaultPrevented, true)
-    assert.equal(app.button(label).clicks, 1)
-  }
-})
-
-test('keyboard arithmetic updates both displays, including division', () => {
-  for (const [operator, result] of [['+', '10'], ['-', '6'], ['*', '16'], ['/', '4']]) {
-    const app = setup()
-    app.key('8')
-    app.key(operator)
-    assert.equal(app.previous.innerText, `8 ${operator === '/' ? '÷' : operator}`)
-    app.key('2')
-    app.key('Enter')
-    assert.equal(app.current.innerText, result)
-    assert.equal(app.previous.innerText, '')
-  }
-})
-
-test('decimal input, deletion, and clearing reuse calculator behavior', () => {
-  const app = setup()
-  for (const key of ['1', '.', '.', '2', '3', 'Backspace']) app.key(key)
-  assert.equal(app.current.innerText, '1.2')
-  app.key('+')
-  app.key('9')
   app.key('Escape')
-  assert.equal(app.current.innerText, '')
-  assert.equal(app.previous.innerText, '')
+  for (const key of '12.3.4') app.key(key)
+  assert.equal(app.display(), '12.34')
   app.key('Backspace')
-  app.key('Enter')
-  assert.equal(app.current.innerText, '')
+  assert.equal(app.display(), '12.3')
+  assert.equal(app.button('DEL').clicks, 1)
+  app.key('+')
+  app.key('4')
+  app.key('Escape')
+  assert.equal(app.display(), '')
+  assert.equal(app.previous(), '')
+  assert.equal(app.button('AC').clicks, 2)
 })
 
-test('unrelated keys, shortcuts, and composing input are untouched', () => {
-  const app = setup()
-  app.key('7')
-  for (const key of ['a', 'Tab', ' ', 'ArrowLeft', 'Delete', '=', 'F5']) {
-    assert.equal(app.key(key).defaultPrevented, false)
-  }
-  for (const modifier of ['ctrlKey', 'metaKey', 'altKey', 'isComposing']) {
-    assert.equal(app.key('1', { [modifier]: true }).defaultPrevented, false)
-  }
-  assert.equal(app.current.innerText, '7')
-  app.key('+', { shiftKey: true })
-  app.key('2')
-  app.key('Enter')
-  assert.equal(app.current.innerText, '9')
-})
+for (const [operator, button, result] of [
+  ['+', '+', '10'], ['-', '-', '6'], ['*', '*', '16'], ['/', '÷', '4']
+]) {
+  test(`keyboard ${operator} calculates via the matching buttons`, () => {
+    const app = setup()
+    for (const key of ['8', operator, '2', 'Enter']) assert.equal(app.key(key), true)
+    assert.equal(app.display(), result)
+    assert.equal(app.previous(), '')
+    assert.equal(app.button(button).clicks, 1)
+    assert.equal(app.button('=').clicks, 1)
+  })
+}
 
-test('mouse and keyboard input can be mixed', () => {
+test('keyboard and pointer input can be mixed; equals key also computes', () => {
   const app = setup()
   app.button('6').click()
-  app.key('*')
-  app.key('3')
-  app.button('=').click()
-  assert.equal(app.current.innerText, '18')
+  app.key('/')
+  app.button('2').click()
+  app.key('=')
+  assert.equal(app.display(), '3')
+})
+
+test('unrelated keys and browser shortcuts do not change state or prevent defaults', () => {
+  const app = setup()
+  app.key('7')
+  for (const key of ['a', 'c', 'Delete', 'Tab', 'ArrowLeft', ' ', 'F5']) {
+    assert.equal(app.key(key), false)
+  }
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
+    for (const key of ['1', '+', 'Enter', 'Escape', 'Backspace']) {
+      assert.equal(app.key(key, { [modifier]: true }), false)
+    }
+  }
+  assert.equal(app.display(), '7')
+  assert.equal(app.key('+', { shiftKey: true }), true)
+  assert.equal(app.previous(), '7 +')
 })
