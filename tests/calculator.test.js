@@ -299,3 +299,145 @@ test('percent leaves an error unchanged', () => {
   const calculator = createCalculator()
   calculator.press('1', '÷', '0', '=', '%')
   assert.equal(calculator.current.innerText, message)})
+
+// Issue #32: state transitions across otherwise independently tested features.
+for (const [first, subtotal] of [['+', '10'], ['-', '6'], ['*', '16'], ['÷', '4']]) {
+  for (const next of ['+', '-', '*', '÷']) {
+    test(`operator chain ${first} → equals → ${next} uses the result`, () => {
+      const calculator = createCalculator()
+      calculator.press('8', first, '2', '=')
+      assert.equal(calculator.current.innerText, subtotal)
+      assert.equal(calculator.previous.innerText, '')
+      calculator.press(next)
+      assert.equal(calculator.previous.innerText, `${subtotal} ${next}`)
+      assert.equal(calculator.current.innerText, '')
+      calculator.press('2', '=')
+      const value = Number(subtotal)
+      const expected = { '+': value + 2, '-': value - 2, '*': value * 2, '÷': value / 2 }
+      assert.equal(calculator.current.innerText, String(expected[next]))
+      assert.equal(calculator.previous.innerText, '')
+    })
+  }
+}
+
+test('sign toggle mid-entry preserves digits and a trailing decimal', () => {
+  const calculator = createCalculator()
+  calculator.press('1', '2', '.', '+/-')
+  assert.equal(calculator.current.innerText, '-12.')
+  calculator.press('5')
+  assert.equal(calculator.current.innerText, '-12.5')
+  calculator.press('+/-')
+  assert.equal(calculator.current.innerText, '12.5')
+  calculator.press('*', '2', '=')
+  assert.equal(calculator.current.innerText, '25')
+})
+
+test('sign toggle after equals is inactive until a new number entry', () => {
+  const calculator = createCalculator()
+  calculator.press('8', '+', '2', '=', '+/-')
+  assert.equal(calculator.current.innerText, '10')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '12')
+  calculator.press('3', '+/-', '4')
+  assert.equal(calculator.current.innerText, '-34')
+  calculator.press('+/-')
+  assert.equal(calculator.current.innerText, '34')
+})
+
+for (const [operator, result] of [['+', '199.9'], ['-', '200.1'], ['*', '-20'], ['÷', '-2,000']]) {
+  for (const order of [['%', '+/-'], ['+/-', '%']]) {
+    test(`pending ${operator} with ${order.join(' then ')} uses the signed percent entry`, () => {
+      const calculator = createCalculator()
+      calculator.press('2', '0', '0', operator, '%', '+/-')
+      assert.equal(calculator.current.innerText, '')
+      assert.equal(calculator.previous.innerText, `200 ${operator}`)
+      calculator.press('1', '0', ...order)
+      assert.equal(calculator.current.innerText, '-0.1')
+      assert.equal(calculator.previous.innerText, `200 ${operator}`)
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, result)
+      assert.equal(calculator.previous.innerText, '')
+    })
+  }
+}
+
+test('M+ with an empty pending operand leaves memory and the operation unchanged', () => {
+  const calculator = createCalculator()
+  calculator.press('3', 'M+', 'AC', '8', '+', 'M+')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('MR')
+  assert.equal(calculator.current.innerText, '3')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '11')
+})
+
+test('M+ with a pending operator stores only the entry without computing', () => {
+  const calculator = createCalculator()
+  calculator.press('3', 'M+', 'AC', '8', '*', '2', 'M+')
+  assert.equal(calculator.current.innerText, '2')
+  assert.equal(calculator.previous.innerText, '8 *')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '16')
+  calculator.press('AC', 'MR')
+  assert.equal(calculator.current.innerText, '5')
+})
+
+test('MR then immediate operator uses recalled memory instead of the equals result', () => {
+  const calculator = createCalculator()
+  calculator.press('4', 'M+', 'AC', '8', '+', '2', '=')
+  assert.equal(calculator.current.innerText, '10')
+  calculator.press('MR', '*')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '4 *')
+  calculator.press('3', '=')
+  assert.equal(calculator.current.innerText, '12')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '36')
+})
+
+for (const recovery of ['number key', 'AC']) {
+  test(`divide-by-zero recovery via ${recovery} clears repeat-equals state`, () => {
+    const calculator = createCalculator()
+    calculator.press('8', '+', '2', '=', '÷', '0', '=')
+    assert.equal(calculator.current.innerText, message)
+    assert.equal(calculator.previous.innerText, '')
+    if (recovery === 'AC') {
+      calculator.press('AC')
+      assert.equal(calculator.current.innerText, '')
+      assert.equal(calculator.previous.innerText, '')
+    }
+    calculator.press('4', '=')
+    assert.equal(calculator.current.innerText, '4')
+    calculator.press('+', '3', '=', '=')
+    assert.equal(calculator.current.innerText, '10')
+    assert.equal(calculator.previous.innerText, '')
+  })
+}
+
+for (const [operator, first, repeated, entry, replayed, twice] of [
+  ['+', '10', '12', '4', '6', '8'],
+  ['-', '6', '4', '10', '8', '6'],
+  ['*', '16', '32', '3', '6', '12'],
+  ['÷', '4', '2', '16', '8', '4']
+]) {
+  test(`repeat-equals ${operator} alternates with fresh number entries`, () => {
+    const calculator = createCalculator()
+    calculator.press('8', operator, '2', '=')
+    assert.equal(calculator.current.innerText, first)
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, repeated)
+    calculator.press(...entry)
+    assert.equal(calculator.current.innerText, entry)
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, replayed)
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, twice)
+    calculator.press(...entry)
+    assert.equal(calculator.current.innerText, entry)
+    calculator.press('=')
+    assert.equal(calculator.current.innerText, replayed)
+    assert.equal(calculator.previous.innerText, '')
+  })
+}
