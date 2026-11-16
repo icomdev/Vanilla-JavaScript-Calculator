@@ -107,3 +107,20 @@ test('ordinary chained calculations still work', () => {
   calculator.press('2', '+', '3', '*', '4', '=')
   assert.equal(calculator.current.innerText, '20')
 })
+
+test('a leading unary minus remains visible before decimal digits', () => {
+  const calculator = createCalculator()
+  calculator.press('-', '.')
+  assert.equal(calculator.current.innerText, '-.')
+  calculator.press('5', '*', '2', '=')
+  assert.equal(calculator.current.innerText, '-1')
+})
+
+test('repeated minus does not stack signs; equals waits for a number', () => {
+  const calculator = createCalculator()
+  calculator.press('1', '+', '-', '-', '=')
+  assert.equal(calculator.previous.innerText, '1 +')
+  assert.equal(calculator.current.innerText, '-')
+  calculator.press('2', '=')
+  assert.equal(calculator.current.innerText, '-1')
+})
