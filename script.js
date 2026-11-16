@@ -134,8 +134,8 @@ class Calculator {
     }
     this.lastOperation = operation
     this.lastOperand = current
-    if (recordHistory) {
-      this.history = `${repeating ? prev : this.previousOperand}${operation}${repeating ? current : this.currentOperand}=${computation}`
+    if (recordHistory && !repeating) {
+      this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
     }
     this.currentOperand = computation
     this.operation = undefined

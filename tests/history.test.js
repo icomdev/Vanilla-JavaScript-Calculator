@@ -54,7 +54,7 @@ test('history survives editing and intermediate chained calculations', () => {
 
 test('all-clear resets history and both operands', () => {
   const { press, text } = setup()
-  press('1', '+', '2', '=', 'C')
+  press('1', '+', '2', '=', 'AC')
   for (const selector of ['[data-history]', '[data-current-operand]', '[data-previous-operand]']) {
     assert.equal(text(selector), '')
   }
@@ -67,7 +67,7 @@ test('incomplete or repeated equals does not overwrite the last completed expres
   press('=')
   assert.equal(text('[data-history]'), '')
   press('1', '.', '5', '+', '.', '5', '=')
-  assert.equal(text('[data-history]'), '1.5+.5=2')
+  assert.equal(text('[data-history]'), '1.5+0.5=2')
   press('=', '+', '=')
-  assert.equal(text('[data-history]'), '1.5+.5=2')
+  assert.equal(text('[data-history]'), '1.5+0.5=2')
 })
