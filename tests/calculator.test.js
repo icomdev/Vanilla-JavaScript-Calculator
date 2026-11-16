@@ -299,3 +299,145 @@ test('percent leaves an error unchanged', () => {
   const calculator = createCalculator()
   calculator.press('1', '÷', '0', '=', '%')
   assert.equal(calculator.current.innerText, message)})
+
+// Issue #32: state-transition sweep. Keep each assertion at the transition
+// boundary so a failure distinguishes stale operands from a wrong result.
+const sweepOperations = {
+  '+': (a, b) => a + b,
+  '-': (a, b) => a - b,
+  '*': (a, b) => a * b,
+  '÷': (a, b) => a / b
+}
+
+for (const [first, applyFirst] of Object.entries(sweepOperations)) {
+  for (const [next, applyNext] of Object.entries(sweepOperations)) {
+    test(`sweep: result chaining ${first} then ${next}`, () => {
+      const calculator = createCalculator()
+      const result = applyFirst(8, 2)
+      calculator.press('8', first, '2', '=')
+      assert.equal(calculator.current.innerText, String(result))
+      assert.equal(calculator.previous.innerText, '')
+      calculator.press(next)
+      assert.equal(calculator.current.innerText, '')
+      assert.equal(calculator.previous.innerText, `${result} ${next}`)
+      calculator.press('2', '=')
+      assert.equal(calculator.current.innerText, String(applyNext(result, 2)))
+      assert.equal(calculator.previous.innerText, '')
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, String(applyNext(applyNext(result, 2), 2)))
+    })
+  }
+}
+
+test('sweep: sign toggle mid-entry preserves digits and pending operator', () => {
+  const calculator = createCalculator()
+  calculator.press('8', '+', '1', '.', '2', '+/-', '5')
+  assert.equal(calculator.current.innerText, '-1.25')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('+/-')
+  assert.equal(calculator.current.innerText, '1.25')
+  calculator.press('+/-', '=')
+  assert.equal(calculator.current.innerText, '6.75')
+})
+
+test('sweep: sign toggle after equals waits for a new entry', () => {
+  const calculator = createCalculator()
+  calculator.press('8', '+', '2', '=', '+/-')
+  assert.equal(calculator.current.innerText, '10')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '12')
+  calculator.press('3', '+/-', '4')
+  assert.equal(calculator.current.innerText, '-34')
+  calculator.press('+', '2', '=')
+  assert.equal(calculator.current.innerText, '-32')
+})
+
+for (const [operator, apply] of Object.entries(sweepOperations)) {
+  for (const order of ['sign then percent', 'percent then sign']) {
+    test(`sweep: pending ${operator} with ${order}`, () => {
+      const calculator = createCalculator()
+      calculator.press('2', '0', '0', operator, '%', '+/-')
+      assert.equal(calculator.current.innerText, '')
+      assert.equal(calculator.previous.innerText, `200 ${operator}`)
+      calculator.press('1', '0')
+      calculator.press(...(order === 'sign then percent' ? ['+/-', '%'] : ['%', '+/-']))
+      assert.equal(calculator.current.innerText, '-0.1')
+      assert.equal(calculator.previous.innerText, `200 ${operator}`)
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, apply(200, -0.1).toLocaleString('en'))
+    })
+  }
+}
+
+test('sweep: M+ with an empty pending operand leaves memory and operation intact', () => {
+  const calculator = createCalculator()
+  calculator.press('3', 'M+', 'AC', '8', '+', 'M+')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('MR')
+  assert.equal(calculator.current.innerText, '3')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '11')
+})
+
+test('sweep: M+ stores the pending right operand without computing it', () => {
+  const calculator = createCalculator()
+  calculator.press('8', '+', '2', 'M+')
+  assert.equal(calculator.current.innerText, '2')
+  assert.equal(calculator.previous.innerText, '8 +')
+  calculator.press('=')
+  assert.equal(calculator.current.innerText, '10')
+  calculator.press('MR', '*')
+  assert.equal(calculator.previous.innerText, '2 *')
+  calculator.press('3', '=')
+  assert.equal(calculator.current.innerText, '6')
+})
+
+test('sweep: MR then immediate operator completes a pending calculation', () => {
+  const calculator = createCalculator()
+  calculator.press('3', 'M+', 'AC', '8', '+', 'MR', '*')
+  assert.equal(calculator.current.innerText, '')
+  assert.equal(calculator.previous.innerText, '11 *')
+  calculator.press('2', '=')
+  assert.equal(calculator.current.innerText, '22')
+})
+
+for (const recovery of ['number', 'AC']) {
+  test(`sweep: divide-by-zero recovery via ${recovery} discards replay state`, () => {
+    const calculator = createCalculator()
+    calculator.press('5', '+', '3', '=', '÷', '0', '=')
+    assert.equal(calculator.current.innerText, message)
+    assert.equal(calculator.previous.innerText, '')
+    if (recovery === 'AC') {
+      calculator.press('AC')
+      assert.equal(calculator.current.innerText, '')
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, '')
+    }
+    calculator.press('4', '=')
+    assert.equal(calculator.current.innerText, '4')
+    assert.equal(calculator.previous.innerText, '')
+    calculator.press('+', '2', '=', '=')
+    assert.equal(calculator.current.innerText, '8')
+  })
+}
+
+for (const [operator, apply] of Object.entries(sweepOperations)) {
+  test(`sweep: repeat ${operator} equals alternates with fresh number entry`, () => {
+    const calculator = createCalculator()
+    calculator.press('8', operator, '2', '=', '=')
+    assert.equal(calculator.current.innerText, String(apply(apply(8, 2), 2)))
+    for (const entry of ['6', '4']) {
+      calculator.press(entry)
+      assert.equal(calculator.current.innerText, entry)
+      assert.equal(calculator.previous.innerText, '')
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, String(apply(Number(entry), 2)))
+      calculator.press('=')
+      assert.equal(calculator.current.innerText, String(apply(apply(Number(entry), 2), 2)))
+    }
+    calculator.press('+', '1', '=', '=')
+    assert.equal(calculator.current.innerText, String(apply(apply(4, 2), 2) + 2))
+  })
+}
