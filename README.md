@@ -26,7 +26,7 @@ Open `index.html` in a browser to use the calculator.
 | `MR` | Recalls the memory value into the current entry. |
 | `MC` | Clears the memory. |
 
-The clear button is labeled `AC`, not `C`. There is no `%` button.
+The clear button is labeled `AC`, not `C`.
 ## Keyboard
 
 The keyboard uses the same actions as the on-screen buttons:
@@ -35,6 +35,7 @@ The keyboard uses the same actions as the on-screen buttons:
 | --- | --- |
 | `0`–`9`, `.` | Enter digits or a decimal point |
 | `+`, `-`, `*`, `/` | Add, subtract, multiply, or divide |
+| `%` | Divide the current entry by 100 (same as the percent button) |
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear all (AC) |
 | `Backspace` | Delete the last character (DEL) |

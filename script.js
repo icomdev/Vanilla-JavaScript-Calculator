@@ -184,6 +184,7 @@ class Calculator {
 
 const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
+const percentButton = document.querySelector('[data-percent]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
 const backspaceButton = document.querySelector('[data-backspace]')
@@ -259,6 +260,7 @@ const keyboardButtons = new Map(
   [...numberButtons, ...operationButtons].map(button => [button.innerText, button])
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
+keyboardButtons.set('%', percentButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
@@ -276,7 +278,6 @@ document.addEventListener('keydown', event => {
   button.click()
 })
 
-const percentButton = document.querySelector('[data-percent]')
 percentButton.addEventListener('click', () => {
   calculator.percent()
   calculator.updateDisplay()
