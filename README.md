@@ -27,21 +27,73 @@ Open `index.html` in a browser to use the calculator.
 | `MC` | Clears the memory. |
 
 The clear button is labeled `AC`, not `C`.
-## Keyboard
+## Quick reference
 
 The keyboard uses the same actions as the on-screen buttons:
 
 | Key | Action |
 | --- | --- |
 | `0`–`9`, `.` | Enter digits or a decimal point |
-| `+`, `-`, `*`, `/` | Add, subtract, multiply, or divide |
+| `+`, `-`, `*`, `/` or `÷` | Add, subtract, multiply, or divide |
 | `%` | Divide the current entry by 100 (same as the percent button) |
 | `Enter` or `=` | Calculate the result |
-| `Escape` | Clear all (AC) |
+| `Escape` or `Shift+Escape` | Clear calculation, history and repeated equals (AC); preserve memory |
 | `Backspace` | Delete the last character (DEL) |
 
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
 
-## Tests
+## Testing
 
 Run `node --test tests/ test/` with Node.js 18 or newer.
+
+The suites run the real script in Node's VM with lightweight DOM stubs:
+
+- `test/keyboard.test.js`: keyboard/button parity, arithmetic, deletion, clear,
+  percent, mixed pointer/keyboard input, and ignored browser shortcuts.
+- `tests/calculator.test.js`: arithmetic/chaining, division-by-zero recovery,
+  repeated equals, operator replacement, unary minus, and percent.
+- `tests/decimal.test.js`: decimal guards, arithmetic, deletion, and result editing.
+- `tests/history.test.js` and `tests/history.test.cjs`: expression recording,
+  replacement, preservation while editing/chaining, and clearing.
+- `tests/memory.test.cjs`: memory add/recall/clear, indicator state, pending
+  operations, and invalid or non-finite entries.
+
+You can also run `node --test` from the repository root to discover all tests.
+No dependencies or build step are needed. These are logic/event-handler tests,
+not browser rendering or visual tests.
+
+## Layout
+
+The current grid has **4 columns**, not 5 columns × 5 rows. The display spans
+all four columns. CSS defines six button-row tracks; auto-placement adds a
+seventh row for `=`. The `0` button occupies one cell (no zero-span); `=` spans
+two columns. This sketch reflects the actual HTML/CSS, not a proposed redesign:
+
+```text
++--------+--------+--------+--------+
+| M      history (last expression) |
+|                previous operand |
+|                 current operand |
++--------+--------+--------+--------+
+|   M+   |   MR   |   MC   |   %    |
++--------+--------+--------+--------+
+|   AC   |  DEL   |  <-    |  +/-   |
++--------+--------+--------+--------+
+|   /    |   1    |   2    |   3    |
++--------+--------+--------+--------+
+|   *    |   4    |   5    |   6    |
++--------+--------+--------+--------+
+|   +    |   7    |   8    |   9    |
++--------+--------+--------+--------+
+|   -    |   .    |   0    |        |
++--------+--------+--------+--------+
+|        =        |                |
++-----------------+----------------+
+```
+
+Here `/` represents `÷`, `<-` represents `⌫`, and blank cells have no button.
+The memory controls (`M+`, `MR`, `MC`) share the first button row with `%`.
+The `M` indicator sits at the upper left of the display and is hidden when
+memory is zero. The history line sits above the pending (previous) operand
+and current entry. It shows the last completed expression, is replaced by the
+next completed calculation, and is cleared by AC.
