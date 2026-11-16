@@ -1,11 +1,13 @@
 class Calculator {
-  constructor(previousOperandTextElement, currentOperandTextElement) {
+  constructor(previousOperandTextElement, currentOperandTextElement, historyTextElement) {
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
+    this.historyTextElement = historyTextElement
     this.clear()
   }
 
   clear() {
+    this.history = ''
     this.currentOperand = ''
     this.previousOperand = ''
     this.operation = undefined
@@ -30,7 +32,7 @@ class Calculator {
     this.currentOperand = ''
   }
 
-  compute() {
+  compute(recordHistory = false) {
     let computation
     const prev = parseFloat(this.previousOperand)
     const current = parseFloat(this.currentOperand)
@@ -50,6 +52,9 @@ class Calculator {
         break
       default:
         return
+    }
+    if (recordHistory) {
+      this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
     }
     this.currentOperand = computation
     this.operation = undefined
@@ -74,6 +79,7 @@ class Calculator {
   }
 
   updateDisplay() {
+    this.historyTextElement.innerText = this.history
     this.currentOperandTextElement.innerText =
       this.getDisplayNumber(this.currentOperand)
     if (this.operation != null) {
@@ -94,7 +100,9 @@ const allClearButton = document.querySelector('[data-all-clear]')
 const previousOperandTextElement = document.querySelector('[data-previous-operand]')
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
 
-const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement)
+const historyTextElement = document.querySelector('[data-history]')
+
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, historyTextElement)
 
 numberButtons.forEach(button => {
   button.addEventListener('click', () => {
@@ -111,7 +119,7 @@ operationButtons.forEach(button => {
 })
 
 equalsButton.addEventListener('click', button => {
-  calculator.compute()
+  calculator.compute(true)
   calculator.updateDisplay()
 })
 

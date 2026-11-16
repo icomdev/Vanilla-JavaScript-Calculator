@@ -47,6 +47,12 @@ body {
   word-break: break-all;
 }
 
+.output .history {
+  color: rgba(255, 255, 255, .6);
+  font-size: 1rem;
+  min-height: 1.2em;
+}
+
 .output .previous-operand {
   color: rgba(255, 255, 255, .75);
   font-size: 1.5rem;
