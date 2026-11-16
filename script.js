@@ -9,13 +9,26 @@ class Calculator {
     this.currentOperand = ''
     this.previousOperand = ''
     this.operation = undefined
+    this.isResult = false
   }
 
   delete() {
     this.currentOperand = this.currentOperand.toString().slice(0, -1)
+    if (this.currentOperand === '-') this.currentOperand = ''
+  }
+
+  toggleSign() {
+    const value = parseFloat(this.currentOperand)
+    if (this.isResult || isNaN(value) || value === 0) return
+    const entry = this.currentOperand.toString()
+    this.currentOperand = entry.startsWith('-') ? entry.slice(1) : `-${entry}`
   }
 
   appendNumber(number) {
+    if (this.isResult) {
+      this.currentOperand = ''
+      this.isResult = false
+    }
     if (number === '.' && this.currentOperand.includes('.')) return
     this.currentOperand = this.currentOperand.toString() + number.toString()
   }
@@ -28,6 +41,7 @@ class Calculator {
     this.operation = operation
     this.previousOperand = this.currentOperand
     this.currentOperand = ''
+    this.isResult = false
   }
 
   compute() {
@@ -54,6 +68,7 @@ class Calculator {
     this.currentOperand = computation
     this.operation = undefined
     this.previousOperand = ''
+    this.isResult = true
   }
 
   getDisplayNumber(number) {
@@ -62,7 +77,7 @@ class Calculator {
     const decimalDigits = stringNumber.split('.')[1]
     let integerDisplay
     if (isNaN(integerDigits)) {
-      integerDisplay = ''
+      integerDisplay = stringNumber.startsWith('-') ? '-' : ''
     } else {
       integerDisplay = integerDigits.toLocaleString('en', { maximumFractionDigits: 0 })
     }
@@ -90,6 +105,7 @@ const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
+const signToggleButton = document.querySelector('[data-sign-toggle]')
 const allClearButton = document.querySelector('[data-all-clear]')
 const previousOperandTextElement = document.querySelector('[data-previous-operand]')
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
@@ -112,6 +128,7 @@ operationButtons.forEach(button => {
 
 equalsButton.addEventListener('click', button => {
   calculator.compute()
+  calculator.isResult = true
   calculator.updateDisplay()
 })
 
@@ -122,5 +139,10 @@ allClearButton.addEventListener('click', button => {
 
 deleteButton.addEventListener('click', button => {
   calculator.delete()
+  calculator.updateDisplay()
+})
+
+signToggleButton.addEventListener('click', () => {
+  calculator.toggleSign()
   calculator.updateDisplay()
 })
