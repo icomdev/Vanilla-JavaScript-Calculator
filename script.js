@@ -1,7 +1,9 @@
 class Calculator {
-  constructor(previousOperandTextElement, currentOperandTextElement) {
+  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement) {
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
+    this.memoryIndicatorElement = memoryIndicatorElement
+    this.memory = 0
     this.clear()
   }
 
@@ -11,12 +13,27 @@ class Calculator {
     this.operation = undefined
   }
 
+  addToMemory() {
+    const value = parseFloat(this.currentOperand)
+    if (!Number.isFinite(value)) return
+    const total = this.memory + value
+    if (Number.isFinite(total)) this.memory = total
+  }
+
+  recallMemory() {
+    this.currentOperand = this.memory.toString()
+  }
+
+  clearMemory() {
+    this.memory = 0
+  }
+
   delete() {
     this.currentOperand = this.currentOperand.toString().slice(0, -1)
   }
 
   appendNumber(number) {
-    if (number === '.' && this.currentOperand.includes('.')) return
+    if (number === '.' && this.currentOperand.toString().includes('.')) return
     this.currentOperand = this.currentOperand.toString() + number.toString()
   }
 
@@ -74,6 +91,7 @@ class Calculator {
   }
 
   updateDisplay() {
+    this.memoryIndicatorElement.hidden = this.memory === 0
     this.currentOperandTextElement.innerText =
       this.getDisplayNumber(this.currentOperand)
     if (this.operation != null) {
@@ -91,10 +109,14 @@ const operationButtons = document.querySelectorAll('[data-operation]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
 const allClearButton = document.querySelector('[data-all-clear]')
+const memoryAddButton = document.querySelector('[data-memory-add]')
+const memoryRecallButton = document.querySelector('[data-memory-recall]')
+const memoryClearButton = document.querySelector('[data-memory-clear]')
+const memoryIndicatorElement = document.querySelector('[data-memory-indicator]')
 const previousOperandTextElement = document.querySelector('[data-previous-operand]')
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
 
-const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement)
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement)
 
 numberButtons.forEach(button => {
   button.addEventListener('click', () => {
@@ -122,5 +144,20 @@ allClearButton.addEventListener('click', button => {
 
 deleteButton.addEventListener('click', button => {
   calculator.delete()
+  calculator.updateDisplay()
+})
+
+memoryAddButton.addEventListener('click', () => {
+  calculator.addToMemory()
+  calculator.updateDisplay()
+})
+
+memoryRecallButton.addEventListener('click', () => {
+  calculator.recallMemory()
+  calculator.updateDisplay()
+})
+
+memoryClearButton.addEventListener('click', () => {
+  calculator.clearMemory()
   calculator.updateDisplay()
 })
