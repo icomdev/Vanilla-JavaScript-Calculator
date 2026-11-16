@@ -29,6 +29,7 @@ function createCalculator() {
     '[data-memory-recall]': button('MR'),
     '[data-memory-clear]': button('MC'),
     '[data-memory-indicator]': { hidden: true },
+    '[data-history]': { innerText: '' },
     '[data-all-clear]': button('AC'),
     '[data-previous-operand]': previous,
     '[data-current-operand]': current

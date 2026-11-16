@@ -21,6 +21,7 @@ function createCalculator() {
   const previous = { innerText: '' }
   const current = { innerText: '' }
   elements.set('[data-memory-indicator]', [{ hidden: true }])
+  elements.set('[data-history]', [{ innerText: '' }])
   elements.set('[data-previous-operand]', [previous])
   elements.set('[data-current-operand]', [current])
   vm.runInNewContext(readFileSync(`${__dirname}/../script.js`, 'utf8'), {

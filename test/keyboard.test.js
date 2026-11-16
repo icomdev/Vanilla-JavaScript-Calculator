@@ -24,6 +24,7 @@ function setup() {
     elements.get(selector).push(button)
   }
   elements.set('[data-memory-indicator]', [{ hidden: true }])
+  elements.set('[data-history]', [{ innerText: '' }])
   for (const selector of ['[data-previous-operand]', '[data-current-operand]']) {
     elements.set(selector, [{ innerText: '' }])
   }

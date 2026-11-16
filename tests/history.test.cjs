@@ -15,7 +15,7 @@ function setup() {
     return elements.get(selector)
   }
   const context = vm.createContext({
-    document: { querySelector: element, querySelectorAll: () => [] }
+    document: { querySelector: element, querySelectorAll: () => [], addEventListener() {} }
   })
   vm.runInContext(fs.readFileSync('script.js', 'utf8'), context)
   return {

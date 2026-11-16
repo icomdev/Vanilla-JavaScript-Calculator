@@ -7,7 +7,7 @@ const path = require('node:path')
 // Exercise the real event handlers with elements from the calculator markup.
 function setup() {
   const html = readFileSync(path.join(__dirname, '../index.html'), 'utf8')
-  const elements = [...html.matchAll(/<(?:div|button)\b([^>]*\bdata-[^>]*)>([^<]*)/g)]
+  const elements = [...html.matchAll(/<(?:div|button|span)\b([^>]*\bdata-[^>]*)>([^<]*)/g)]
     .map(([, attributes, text]) => ({
       attributes,
       innerText: text,
@@ -17,7 +17,8 @@ function setup() {
   vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), {
     document: {
       querySelector: selector => select(selector)[0],
-      querySelectorAll: select
+      querySelectorAll: select,
+      addEventListener() {}
     }
   })
   return {
