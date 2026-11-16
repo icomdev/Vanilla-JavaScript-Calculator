@@ -25,7 +25,7 @@ function createCalculator() {
     '[data-delete]': button('DEL'),
     '[data-backspace]': button('⌫'),
     '[data-percent]': button('%'),
-    '[data-sign-toggle]': button('+/-'),
+    '[data-sign-toggle]': button('±'),
     '[data-memory-add]': button('M+'),
     '[data-memory-recall]': button('MR'),
     '[data-memory-clear]': button('MC'),

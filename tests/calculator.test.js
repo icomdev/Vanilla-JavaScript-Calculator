@@ -287,7 +287,7 @@ test('percent supports zero, negative entries, and computed results', () => {
   const calculator = createCalculator()
   calculator.press('0', '%')
   assert.equal(calculator.current.innerText, '0')
-  calculator.press('AC', '5', '+/-', '%')
+  calculator.press('AC', '5', '±', '%')
   assert.equal(calculator.current.innerText, '-0.05')
   calculator.press('AC', '2', '5', '*', '2', '=', '%')
   assert.equal(calculator.current.innerText, '0.5')
@@ -322,33 +322,33 @@ for (const [first, subtotal] of [['+', '10'], ['-', '6'], ['*', '16'], ['÷', '4
 
 test('sign toggle mid-entry preserves digits and a trailing decimal', () => {
   const calculator = createCalculator()
-  calculator.press('1', '2', '.', '+/-')
+  calculator.press('1', '2', '.', '±')
   assert.equal(calculator.current.innerText, '-12.')
   calculator.press('5')
   assert.equal(calculator.current.innerText, '-12.5')
-  calculator.press('+/-')
+  calculator.press('±')
   assert.equal(calculator.current.innerText, '12.5')
   calculator.press('*', '2', '=')
   assert.equal(calculator.current.innerText, '25')
 })
 
-test('sign toggle after equals is inactive until a new number entry', () => {
+test('sign toggle after equals negates the result and preserves repeat equals', () => {
   const calculator = createCalculator()
-  calculator.press('8', '+', '2', '=', '+/-')
-  assert.equal(calculator.current.innerText, '10')
+  calculator.press('8', '+', '2', '=', '±')
+  assert.equal(calculator.current.innerText, '-10')
   calculator.press('=')
-  assert.equal(calculator.current.innerText, '12')
-  calculator.press('3', '+/-', '4')
+  assert.equal(calculator.current.innerText, '-8')
+  calculator.press('3', '±', '4')
   assert.equal(calculator.current.innerText, '-34')
-  calculator.press('+/-')
+  calculator.press('±')
   assert.equal(calculator.current.innerText, '34')
 })
 
 for (const [operator, result] of [['+', '199.9'], ['-', '200.1'], ['*', '-20'], ['÷', '-2,000']]) {
-  for (const order of [['%', '+/-'], ['+/-', '%']]) {
+  for (const order of [['%', '±'], ['±', '%']]) {
     test(`pending ${operator} with ${order.join(' then ')} uses the signed percent entry`, () => {
       const calculator = createCalculator()
-      calculator.press('2', '0', '0', operator, '%', '+/-')
+      calculator.press('2', '0', '0', operator, '%', '±')
       assert.equal(calculator.current.innerText, '')
       assert.equal(calculator.previous.innerText, `200 ${operator}`)
       calculator.press('1', '0', ...order)

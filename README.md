@@ -25,7 +25,7 @@ Open `index.html` in a browser to use the calculator.
 | `AC` | Clears both numbers, the selected operator, and the remembered operation for repeated equals. Hold for 700 ms to also clear memory. |
 | `DEL` | Removes the last character of the current number. |
 | `⌫` | Removes the last character of the current entry; a single digit resets it to `0`. |
-| `+/-` | Toggles the sign of the current entry (inactive right after `=` until a new entry starts). |
+| `±` | Toggles the sign of the current entry or last result after `=`. Empty entries and zero are unchanged; pending operations are preserved. |
 | `M+` | Adds the current entry to memory. |
 | `MR` | Recalls the memory value into the current entry. |
 | `MC` | Clears the memory. |
@@ -41,6 +41,7 @@ The keyboard uses the same actions as the on-screen buttons:
 | `0`–`9`, `.` | Enter digits or a decimal point |
 | `+`, `-`, `*`, `/` or `÷` | Add, subtract, multiply, or divide |
 | `%` | Divide the current entry by 100 (same as the percent button) |
+| `s` | Toggle the sign (±) of the current entry or last result |
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear only the current entry; keep the pending operation and memory |
 | `Shift+Escape` | Full reset, including memory |
@@ -53,9 +54,8 @@ continues to preserve memory; releasing or moving off AC before 700 ms cancels
 the full-reset hold.
 
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
-Shift is allowed (for example, to type `+` or `%`); it does not give Escape a
-different action. There are no dedicated shortcuts for memory, sign toggle, or
-the separate `⌫` button: `Backspace` invokes `DEL`.
+Shift is allowed (for example, to type `+` or `%`). There are no dedicated
+shortcuts for memory or the separate `⌫` button: `Backspace` invokes `DEL`.
 
 ## Layout
 
@@ -72,7 +72,7 @@ two columns. This sketch reflects the actual HTML/CSS, not a proposed redesign:
 +--------+--------+--------+--------+
 |   M+   |   MR   |   MC   |   %    |
 +--------+--------+--------+--------+
-|   AC   |  DEL   |  <-    |  +/-   |
+|   AC   |  DEL   |  <-    |   ±    |
 +--------+--------+--------+--------+
 |   /    |   1    |   2    |   3    |
 +--------+--------+--------+--------+

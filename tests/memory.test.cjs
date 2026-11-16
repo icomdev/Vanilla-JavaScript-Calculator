@@ -165,7 +165,7 @@ test('every button has a readable name, with explicit names for symbolic control
   const symbolicNames = new Map([
     ['M+', 'Add to memory'], ['MR', 'Recall memory'], ['MC', 'Clear memory'],
     ['%', 'Percent'], ['AC', 'All clear'], ['DEL', 'Delete last digit'],
-    ['⌫', 'Backspace'], ['+/-', 'Negate'], ['÷', 'Divide'], ['*', 'Multiply'],
+    ['⌫', 'Backspace'], ['±', 'Toggle sign'], ['÷', 'Divide'], ['*', 'Multiply'],
     ['+', 'Add'], ['-', 'Subtract'], ['.', 'Decimal point'], ['=', 'Equals']
   ])
   const buttons = elements.filter(element => element.tagName === 'button')

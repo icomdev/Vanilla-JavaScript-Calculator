@@ -121,7 +121,7 @@ test('unrelated keys and browser shortcuts do not change state or prevent defaul
     assert.equal(app.key(key), false)
   }
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
-    for (const key of ['1', '+', '%', 'Enter', 'Escape', 'Backspace']) {
+    for (const key of ['1', '+', '%', 's', 'Enter', 'Escape', 'Backspace']) {
       assert.equal(app.key(key, { [modifier]: true }), false)
     }
   }
@@ -227,7 +227,7 @@ test('every mapped key focuses its corresponding button', () => {
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
     ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
-    ['Backspace', 'DEL'], ['Escape', 'AC']
+    ['s', '±'], ['Backspace', 'DEL'], ['Escape', 'AC']
   ]) {
     app.key(key)
     assert.equal(app.focused(), app.button(label), key)
@@ -294,3 +294,39 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
   app.button('MR').click()
   assert.equal(app.display(), '0')
 })
+
+test('sign control has the requested id and label', () => {
+  const html = readFileSync(__dirname + '/../index.html', 'utf8')
+  assert.match(html, /<button[^>]*data-sign-toggle[^>]*id="sign-toggle"[^>]*>±<\/button>/)
+})
+
+for (const [state, keys, expected, pending] of [
+  ['entry', ['1', '2', '.'], '-12.', ''],
+  ['last result', ['8', '+', '2', '='], '-10', ''],
+  ['empty state', [], '', ''],
+  ['zero entry', ['0'], '0', ''],
+  ['zero result', ['2', '-', '2', '='], '0', ''],
+  ['pending empty entry', ['8', '+'], '', '8 +'],
+  ['mid-expression entry', ['8', '+', '2'], '-2', '8 +']
+]) {
+  test('s matches the sign button for ' + state, () => {
+    const keyboard = setup()
+    const pointer = setup()
+    for (const app of [keyboard, pointer]) keys.forEach(key => app.key(key))
+    assert.equal(keyboard.key('s'), true)
+    pointer.button('±').click()
+    assert.equal(keyboard.display(), expected)
+    assert.equal(keyboard.display(), pointer.display())
+    assert.equal(keyboard.previous(), pending)
+    assert.equal(keyboard.focused(), keyboard.button('±'))
+    assert.equal(keyboard.button('±').clicks, 1)
+    if (state === 'mid-expression entry') {
+      keyboard.key('=')
+      assert.equal(keyboard.display(), '6')
+    }
+    if (state === 'last result') {
+      keyboard.key('3')
+      assert.equal(keyboard.display(), '3')
+    }
+  })
+}
