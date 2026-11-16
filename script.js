@@ -12,6 +12,7 @@ class Calculator {
     this.previousOperand = ''
     this.operation = undefined
     this.isResult = false
+    this.errorMessage = ''
   }
 
   addToMemory() {
@@ -22,6 +23,7 @@ class Calculator {
   }
 
   recallMemory() {
+    if (this.errorMessage) this.clear()
     this.currentOperand = this.memory.toString()
   }
 
@@ -30,6 +32,10 @@ class Calculator {
   }
 
   delete() {
+    if (this.errorMessage) {
+      this.clear()
+      return
+    }
     this.currentOperand = this.currentOperand.toString().slice(0, -1)
     if (this.currentOperand === '-') this.currentOperand = ''
   }
@@ -52,6 +58,7 @@ class Calculator {
   }
 
   appendNumber(number) {
+    if (this.errorMessage) this.clear()
     if (this.isResult) {
       // PR9: digits start a fresh entry after equals; PR18 tests: '.' continues the result (3 -> 3.5)
       if (number !== '.') this.currentOperand = ''
@@ -65,9 +72,14 @@ class Calculator {
   }
 
   chooseOperation(operation) {
+    if (this.errorMessage) {
+      this.clear()
+      return
+    }
     if (this.currentOperand === '') return
     if (this.previousOperand !== '') {
       this.compute()
+      if (this.errorMessage) return
     }
     this.operation = operation
     this.previousOperand = this.currentOperand
@@ -76,6 +88,10 @@ class Calculator {
   }
 
   compute() {
+    if (this.errorMessage) {
+      this.clear()
+      return
+    }
     let computation
     const prev = parseFloat(this.previousOperand)
     const current = parseFloat(this.currentOperand)
@@ -91,6 +107,11 @@ class Calculator {
         computation = prev * current
         break
       case '÷':
+        if (current === 0) {
+          this.clear()
+          this.errorMessage = 'Cannot divide by zero'
+          return
+        }
         computation = prev / current
         break
       default:
@@ -122,7 +143,7 @@ class Calculator {
   updateDisplay() {
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.currentOperandTextElement.innerText =
-      this.getDisplayNumber(this.currentOperand)
+      this.errorMessage || this.getDisplayNumber(this.currentOperand)
     if (this.operation != null) {
       this.previousOperandTextElement.innerText =
         `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`
