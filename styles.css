@@ -31,6 +31,11 @@ body {
   background-color: rgba(255, 255, 255, .9);
 }
 
+.calculator-grid > button:focus-visible {
+  outline: 3px solid #16324f;
+  outline-offset: -4px;
+}
+
 .span-two {
   grid-column: span 2;
 }
