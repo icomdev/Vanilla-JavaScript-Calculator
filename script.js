@@ -24,6 +24,7 @@ class Calculator {
    */
   clear() {
     this.history = ''
+    this.lastResult = undefined
     this.currentOperand = ''
     this.previousOperand = ''
     this.operation = undefined
@@ -108,6 +109,24 @@ class Calculator {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
     this.currentOperand = (value / 100).toString()
+  }
+
+  /**
+   * Take the square root of the entry, falling back to the last result.
+   * Ignore missing, negative, or non-finite values and active errors.
+   * @returns {void}
+   */
+  sqrt() {
+    if (this.errorMessage) return
+    const value = this.currentOperand === ''
+      ? this.lastResult
+      : Number(this.currentOperand)
+    if (!Number.isFinite(value) || value < 0) return
+    this.currentOperand = Math.sqrt(value)
+    this.lastResult = this.currentOperand
+    this.isResult = true
+    this.lastOperation = undefined
+    this.lastOperand = undefined
   }
 
   /**
@@ -236,6 +255,7 @@ class Calculator {
       this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
     }
     this.currentOperand = computation
+    this.lastResult = computation
     this.operation = undefined
     this.previousOperand = ''
     this.isResult = true
@@ -289,6 +309,7 @@ class Calculator {
 const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
 const percentButton = document.querySelector('[data-percent]')
+const sqrtButton = document.querySelector('[data-sqrt]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
 const backspaceButton = document.querySelector('[data-backspace]')
@@ -390,6 +411,7 @@ const keyboardButtons = new Map(
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
 keyboardButtons.set('%', percentButton)
+keyboardButtons.set('r', sqrtButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
@@ -417,5 +439,11 @@ document.addEventListener('keydown', event => {
 // Percent button event, also invoked by the keyboard alias.
 percentButton.addEventListener('click', () => {
   calculator.percent()
+  calculator.updateDisplay()
+})
+
+// Square root uses the same handler for pointer and keyboard input.
+sqrtButton?.addEventListener('click', () => {
+  calculator.sqrt()
   calculator.updateDisplay()
 })
