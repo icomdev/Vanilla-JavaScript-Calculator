@@ -1,13 +1,15 @@
 class Calculator {
-  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement) {
+  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement) {
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
     this.memoryIndicatorElement = memoryIndicatorElement
+    this.historyTextElement = historyTextElement
     this.memory = 0
     this.clear()
   }
 
   clear() {
+    this.history = ''
     this.currentOperand = ''
     this.previousOperand = ''
     this.operation = undefined
@@ -98,7 +100,7 @@ class Calculator {
     this.isResult = false
   }
 
-  compute() {
+  compute(recordHistory = false) {
     if (this.errorMessage) {
       this.clear()
       return
@@ -132,6 +134,9 @@ class Calculator {
     }
     this.lastOperation = operation
     this.lastOperand = current
+    if (recordHistory) {
+      this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
+    }
     this.currentOperand = computation
     this.operation = undefined
     this.previousOperand = ''
@@ -157,6 +162,7 @@ class Calculator {
 
   updateDisplay() {
     this.memoryIndicatorElement.hidden = this.memory === 0
+    this.historyTextElement.innerText = this.history
     this.currentOperandTextElement.innerText =
       this.errorMessage || this.getDisplayNumber(this.currentOperand)
     if (this.operation != null) {
@@ -183,7 +189,9 @@ const memoryIndicatorElement = document.querySelector('[data-memory-indicator]')
 const previousOperandTextElement = document.querySelector('[data-previous-operand]')
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
 
-const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement)
+const historyTextElement = document.querySelector('[data-history]')
+
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement)
 
 numberButtons.forEach(button => {
   button.addEventListener('click', () => {
@@ -200,7 +208,7 @@ operationButtons.forEach(button => {
 })
 
 equalsButton.addEventListener('click', button => {
-  calculator.compute()
+  calculator.compute(true)
   calculator.updateDisplay()
 })
 
