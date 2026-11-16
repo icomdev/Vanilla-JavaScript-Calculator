@@ -145,3 +145,14 @@ for (const trigger of ['+', '=']) {
     assert.equal(calculator.current.innerText, '54')
   })
 }
+
+// Sweep matrix, following docs/TEST-SWEEP.md, kept here for new-file-only scope.
+// | State transition | Test name |
+// | --- | --- |
+// | Entered operand -> immediate subtotal | mixed operators evaluate sequentially rather than using precedence |
+// | Subtotal -> all four operators -> result | a long chain carries each subtotal through all four operators |
+// | Chain result -> repeat final operation | repeated equals after a chain re-applies only the final {operator} {operand} |
+// | Empty pending entry -> operator replacement | switching a pending operator mid-chain preserves the accumulated subtotal |
+// | Multi-digit entry -> computed subtotal | an operator after an entered operand computes before queuing the next operator |
+// | Bare minus -> replacement operator | a binary operator replaces an unfinished negative operand mid-chain |
+// | Zero divisor -> error -> fresh entry | division by zero mid-chain triggered by {trigger} clears pending and replay state |
