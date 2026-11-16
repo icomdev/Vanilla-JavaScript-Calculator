@@ -53,7 +53,7 @@ test('history survives editing and intermediate chained calculations', () => {
 
 test('all-clear resets history and both operands', () => {
   const { press, text } = setup()
-  press('1', '+', '2', '=', 'AC')
+  press('1', '+', '2', '=', 'C')
   for (const selector of ['[data-history]', '[data-current-operand]', '[data-previous-operand]']) {
     assert.equal(text(selector), '')
   }
