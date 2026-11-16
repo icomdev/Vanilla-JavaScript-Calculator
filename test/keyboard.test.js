@@ -16,7 +16,7 @@ function setup() {
       innerText: text,
       clicks: 0,
       focus() { document.activeElement = this },
-      dispatch(type, event = {}) { handlers.get(type)?.(event) },
+      dispatch(type, event = {}) { handlers.get(type)(event) },
       addEventListener(type, handler) { handlers.set(type, handler) },
       click() {
         this.clicks++
@@ -37,21 +37,25 @@ function setup() {
     querySelector: selector => elements.get(selector)[0],
     addEventListener: (type, handler) => listeners.set(type, handler)
   }
-  runInNewContext(readFileSync(`${__dirname}/../script.js`, 'utf8'), {
-    document,
-    setTimeout(handler, delay) { timers.set(++nextTimer, { handler, delay }); return nextTimer },
+  runInNewContext(readFileSync(`${__dirname}/../script.js`, 'utf8'), { document,
+    setTimeout(callback, delay) {
+      const id = ++nextTimer
+      timers.set(id, { callback, delay })
+      return id
+    },
     clearTimeout(id) { timers.delete(id) }
   })
   return {
     button: text => [...elements.values()].flat().find(button => button.innerText === text),
     focused: () => document.activeElement,
-    history: () => document.querySelector('[data-history]').innerText,
     memoryHidden: () => document.querySelector('[data-memory-indicator]').hidden,
-    hold() {
+    history: () => document.querySelector('[data-history]').innerText,
+    dispatch: type => listeners.get(type)(),
+    runHold() {
       for (const [id, timer] of timers) {
-        assert.equal(timer.delay, 600)
+        assert.equal(timer.delay, 700)
         timers.delete(id)
-        timer.handler()
+        timer.callback()
       }
     },
     display: () => document.querySelector('[data-current-operand]').innerText,
@@ -67,7 +71,7 @@ function setup() {
   }
 }
 
-test('digits, decimal, deletion and clear use their button handlers', () => {
+test('digits, decimal and deletion use button handlers; Escape clears the entry', () => {
   const app = setup()
   for (const key of '0123456789.') {
     assert.equal(app.key(key), true)
@@ -168,7 +172,7 @@ test('percent key leaves an error state untouched', () => {
 })
 
 
-test('Escape replaces only the current entry and preserves memory and pending operation', () => {
+test('Escape preserves pending operation and memory, allowing a corrected entry', () => {
   const app = setup()
   app.key('8')
   app.button('M+').click()
@@ -179,78 +183,114 @@ test('Escape replaces only the current entry and preserves memory and pending op
   assert.equal(app.previous(), '8 +')
   assert.equal(app.memoryHidden(), false)
   app.key('2')
-  app.key('=')
+  app.key('Enter')
   assert.equal(app.display(), '10')
-  const history = app.history()
-  app.key('Escape')
-  assert.equal(app.history(), history)
-  app.key('=')
-  assert.equal(app.display(), '') // no stale repeated-equals operand
   app.button('MR').click()
   assert.equal(app.display(), '8')
 })
 
-test('Shift+Escape clears pending operation, history, repeat state and memory', () => {
+test('Shift+Escape resets calculation, history, repeated equals and memory', () => {
   const app = setup()
   for (const key of ['8', '+', '2', '=']) app.key(key)
   app.button('M+').click()
-  app.key('*')
-  app.key('3')
+  assert.notEqual(app.history(), '')
   assert.equal(app.key('Escape', { shiftKey: true }), true)
   assert.equal(app.focused(), app.button('AC'))
   assert.equal(app.display(), '')
   assert.equal(app.previous(), '')
   assert.equal(app.history(), '')
   assert.equal(app.memoryHidden(), true)
+  app.key('3')
+  app.key('=')
+  assert.equal(app.display(), '3')
+  app.button('MR').click()
+  assert.equal(app.display(), '0')
+})
+
+test('Escape clears errors and result mode without deleting history', () => {
+  const app = setup()
+  for (const key of ['8', '+', '2', '=']) app.key(key)
+  app.key('Escape')
+  assert.equal(app.history(), '8+2=10')
+  for (const key of ['3', '=']) app.key(key)
+  assert.equal(app.display(), '3')
+  for (const key of ['/', '0', '=']) app.key(key)
+  assert.equal(app.display(), 'Cannot divide by zero')
+  app.key('Escape')
+  assert.equal(app.display(), '')
+  app.key('4')
+  assert.equal(app.display(), '4')
+})
+
+test('every mapped key focuses its corresponding button', () => {
+  const app = setup()
+  for (const [key, label] of [
+    ...[...'0123456789.+-*%'].map(key => [key, key]),
+    ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
+    ['Backspace', 'DEL'], ['Escape', 'AC']
+  ]) {
+    app.key(key)
+    assert.equal(app.focused(), app.button(label), key)
+  }
+  app.key('Tab')
+  app.key('1', { ctrlKey: true })
+  assert.equal(app.focused(), app.button('AC'))
+})
+
+test('long AC clears memory as well as the calculation', () => {
+  const app = setup()
+  app.key('7')
+  app.button('M+').click()
+  app.button('AC').dispatch('pointerdown', { button: 0 })
+  app.runHold()
+  app.dispatch('pointerup')
+  app.button('AC').click()
+  assert.equal(app.display(), '')
+  assert.equal(app.memoryHidden(), true)
+  app.button('MR').click()
+  assert.equal(app.display(), '0')
+})
+
+for (const cancel of ['pointerup', 'pointercancel', 'pointerleave']) {
+  test(cancel + ' cancels a pending AC hold; short AC preserves memory', () => {
+    const app = setup()
+    app.key('7')
+    app.button('M+').click()
+    app.button('AC').dispatch('pointerdown', { button: 0 })
+    if (cancel === 'pointerleave') app.button('AC').dispatch(cancel)
+    else app.dispatch(cancel)
+    app.runHold()
+    app.button('AC').click()
+    assert.equal(app.memoryHidden(), false)
+    app.button('MR').click()
+    assert.equal(app.display(), '7')
+  })
+}
+
+test('non-primary AC presses do not schedule a full clear', () => {
+  const app = setup()
+  app.key('7')
+  app.button('M+').click()
+  app.button('AC').dispatch('pointerdown', { button: 2 })
+  app.button('AC').dispatch('pointerdown', { button: 0, isPrimary: false })
+  app.runHold()
+  assert.equal(app.display(), '7')
+  assert.equal(app.memoryHidden(), false)
+})
+
+test('Shift+Escape recovers from an error and removes stored memory', () => {
+  const app = setup()
+  app.key('9')
+  app.button('M+').click()
+  for (const key of ['/', '0', '=']) app.key(key)
+  assert.equal(app.display(), 'Cannot divide by zero')
+  assert.equal(app.key('Escape', { shiftKey: true }), true)
+  assert.equal(app.display(), '')
+  assert.equal(app.previous(), '')
+  assert.equal(app.memoryHidden(), true)
   app.key('4')
   app.key('=')
   assert.equal(app.display(), '4')
   app.button('MR').click()
   assert.equal(app.display(), '0')
-})
-
-test('either Escape path recovers from an error', () => {
-  for (const shiftKey of [false, true]) {
-    const app = setup()
-    for (const key of ['1', '/', '0', '=']) app.key(key)
-    app.key('Escape', { shiftKey })
-    assert.equal(app.display(), '')
-    app.key('3')
-    assert.equal(app.display(), '3')
-  }
-})
-
-test('recognized keys focus their matching buttons; ignored shortcuts leave focus alone', () => {
-  const app = setup()
-  for (const [key, label] of [['1', '1'], ['.', '.'], ['+', '+'], ['/', '÷'],
-    ['%', '%'], ['Enter', '='], ['=', '='], ['Backspace', 'DEL'], ['Escape', 'AC']]) {
-    app.key(key)
-    assert.equal(app.focused(), app.button(label))
-  }
-  app.key('2', { ctrlKey: true })
-  app.key('Tab')
-  assert.equal(app.focused(), app.button('AC'))
-})
-
-test('long AC clears memory; short, cancelled and abandoned holds do not', () => {
-  for (const end of ['pointerup', 'pointercancel', 'pointerleave']) {
-    const app = setup()
-    app.key('7')
-    app.button('M+').click()
-    const ac = app.button('AC')
-    ac.dispatch('pointerdown', { button: 0 })
-    ac.dispatch(end)
-    app.hold()
-    assert.equal(app.memoryHidden(), false)
-    ac.click()
-    assert.equal(app.memoryHidden(), false)
-    ac.dispatch('pointerdown', { button: 0 })
-    app.hold()
-    assert.equal(app.display(), '')
-    assert.equal(app.memoryHidden(), true)
-    ac.dispatch('pointerup')
-    ac.click() // release click must not restore anything
-    app.button('MR').click()
-    assert.equal(app.display(), '0')
-  }
 })

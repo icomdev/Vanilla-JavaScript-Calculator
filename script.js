@@ -21,8 +21,8 @@ class Calculator {
 
   clearEntry() {
     this.currentOperand = ''
-    this.errorMessage = ''
     this.isResult = false
+    this.errorMessage = ''
     this.lastOperation = undefined
     this.lastOperand = undefined
   }
@@ -238,24 +238,24 @@ allClearButton.addEventListener('click', button => {
   calculator.updateDisplay()
 })
 
-// A short AC keeps its existing behavior; holding it also clears memory.
+// A short AC click keeps its existing behavior; holding AC also resets memory.
 let allClearTimer
 function cancelAllClearHold() {
   clearTimeout(allClearTimer)
   allClearTimer = undefined
 }
 allClearButton.addEventListener('pointerdown', event => {
-  if (event.button !== 0) return
+  if (event.button !== 0 || event.isPrimary === false) return
   cancelAllClearHold()
   allClearTimer = setTimeout(() => {
+    allClearTimer = undefined
     calculator.fullClear()
     calculator.updateDisplay()
-    allClearTimer = undefined
-  }, 600)
+  }, 700)
 })
-for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
-  allClearButton.addEventListener(type, cancelAllClearHold)
-}
+allClearButton.addEventListener('pointerleave', cancelAllClearHold)
+document.addEventListener('pointerup', cancelAllClearHold)
+document.addEventListener('pointercancel', cancelAllClearHold)
 
 deleteButton.addEventListener('click', button => {
   calculator.delete()
