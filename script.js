@@ -230,3 +230,24 @@ memoryClearButton.addEventListener('click', () => {
   calculator.clearMemory()
   calculator.updateDisplay()
 })
+
+// Reuse button click handlers so keyboard and pointer input stay in sync.
+const keyboardButtons = new Map(
+  [...numberButtons, ...operationButtons].map(button => [button.innerText, button])
+)
+keyboardButtons.set('/', keyboardButtons.get('÷'))
+keyboardButtons.set('=', equalsButton)
+keyboardButtons.set('Enter', equalsButton)
+keyboardButtons.set('Escape', allClearButton)
+keyboardButtons.set('Backspace', deleteButton)
+
+document.addEventListener('keydown', event => {
+  // Leave browser/OS shortcuts (copy, reload, etc.) alone.
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+
+  const button = keyboardButtons.get(event.key)
+  if (!button) return
+
+  // In particular, Enter must not also activate the currently focused button.
+  event.preventDefault()
+  button.click()})

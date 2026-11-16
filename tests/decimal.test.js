@@ -35,6 +35,7 @@ function createCalculator() {
   }
   runInNewContext(source, {
     document: {
+      addEventListener() {},
       querySelector: selector => elements[selector],
       querySelectorAll: selector => elements[selector]
     }

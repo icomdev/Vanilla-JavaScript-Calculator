@@ -29,9 +29,18 @@ The clear button is labeled `AC`, not `C`. There is no `%` button.
 
 ## Keyboard
 
-There are no calculator-specific keyboard shortcuts, including Backspace.
-Use the buttons, or Tab to a button and press Enter or Space to activate it.
+The keyboard uses the same actions as the on-screen buttons:
+
+| Key | Action |
+| --- | --- |
+| `0`–`9`, `.` | Enter digits or a decimal point |
+| `+`, `-`, `*`, `/` | Add, subtract, multiply, or divide |
+| `Enter` or `=` | Calculate the result |
+| `Escape` | Clear all (AC) |
+| `Backspace` | Delete the last character (DEL) |
+
+Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
 
 ## Tests
 
-Run `node --test tests/` with Node.js 18 or newer.
+Run `node --test tests/ test/` with Node.js 18 or newer.

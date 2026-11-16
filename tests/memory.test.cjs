@@ -14,6 +14,7 @@ function setup() {
     addEventListener(event, handler) { this[event] = handler }
   }))
   const document = {
+  addEventListener() {},
     querySelectorAll(selector) {
       return elements.filter(element => element.attributes.includes(selector.slice(1, -1)))
     },
