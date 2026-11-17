@@ -72,8 +72,8 @@ body {
 
 .output .memory-indicator {
   position: absolute;
-  top: 10px;
+  bottom: 10px;
   left: 10px;
-  color: rgba(255, 255, 255, .75);
-  font-size: 1rem;
+  color: #00FF6C;
+  font-size: .75rem;
 }

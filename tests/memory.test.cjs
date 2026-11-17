@@ -18,8 +18,11 @@ function setup() {
     hidden: /\bhidden\b/.test(attributes),
     addEventListener(event, handler) { this[event] = handler }
   }))
+  let now = 0
+  let nextTimerId = 0
+  const timers = new Map()
   const document = {
-  addEventListener() {},
+    addEventListener(event, handler) { this[event] = handler },
     querySelectorAll(selector) {
       return elements.filter(element => element.attributes.includes(selector.slice(1, -1)))
     },
@@ -29,9 +32,27 @@ function setup() {
       return element
     }
   }
-  vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), { document })
+  vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), {
+    document,
+    setTimeout(callback, delay) {
+      const id = ++nextTimerId
+      timers.set(id, { callback, due: now + delay })
+      return id
+    },
+    clearTimeout(id) { timers.delete(id) }
+  })
   return {
     elements,
+    advanceTime(milliseconds) {
+      now += milliseconds
+      for (const [id, timer] of timers) {
+        if (timer.due <= now) {
+          timers.delete(id)
+          timer.callback()
+        }
+      }
+    },
+    releasePointer() { document.pointerup() },
     element(attribute) { return document.querySelector(`[data-${attribute}]`) },
     click(attribute) { document.querySelector(`[data-${attribute}]`).click() },
     type(value) {
@@ -60,6 +81,47 @@ test('M+ then AC then MR restores the entry and preserves the indicator', () => 
   assert.equal(app.memoryHidden(), false)
   app.click('memory-recall')
   assert.equal(app.display(), '1,234.5')
+  assert.equal(app.memoryHidden(), false)
+})
+
+test('memory badge starts off and has a readable description', () => {
+  const app = setup()
+  const badge = app.element('memory-indicator')
+  assert.match(badge.innerText, /●/)
+  assert.equal(badge.hidden, true)
+  assert.equal(badge.getAttribute('title'), 'Memory contains a value')
+})
+
+test('holding AC for 700 ms clears memory and its indicator', () => {
+  const app = setup()
+  app.type('42')
+  app.click('memory-add')
+  assert.equal(app.memoryHidden(), false)
+  app.element('all-clear').pointerdown({ button: 0, isPrimary: true })
+  app.advanceTime(699)
+  assert.equal(app.memoryHidden(), false)
+  app.advanceTime(1)
+  assert.equal(app.memoryHidden(), true)
+  assert.equal(app.display(), '')
+  app.releasePointer()
+  app.click('all-clear')
+  app.click('memory-recall')
+  assert.equal(app.display(), '0')
+  assert.equal(app.memoryHidden(), true)
+})
+
+test('releasing AC before the hold threshold preserves the indicator', () => {
+  const app = setup()
+  app.type('7')
+  app.click('memory-add')
+  app.element('all-clear').pointerdown({ button: 0, isPrimary: true })
+  app.advanceTime(699)
+  app.releasePointer()
+  app.click('all-clear')
+  app.advanceTime(1)
+  app.click('memory-recall')
+  assert.equal(app.display(), '7')
+  assert.equal(app.memoryHidden(), false)
 })
 
 test('M+ accumulates and MC clears only memory', () => {
