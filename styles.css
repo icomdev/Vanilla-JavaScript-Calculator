@@ -77,3 +77,24 @@ body {
   color: #00FF6C;
   font-size: .75rem;
 }
+
+.output .history-panel {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.history-panel button {
+  font-size: .75rem;
+  padding: .2rem .4rem;
+  cursor: pointer;
+}
+
+.history-panel button:disabled {
+  cursor: default;
+}
+
+.history-panel button:focus-visible {
+  outline: 3px solid #00AAFF;
+  outline-offset: 2px;
+}

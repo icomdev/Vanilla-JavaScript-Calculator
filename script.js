@@ -6,13 +6,15 @@ class Calculator {
    * @param {HTMLElement} currentOperandTextElement - Current entry/result display.
    * @param {HTMLElement} memoryIndicatorElement - Indicator hidden when memory is zero.
    * @param {HTMLElement} historyTextElement - Last recorded expression display.
+   * @param {HTMLButtonElement} [historyCopyButton] - Session history copy control.
    * @returns {Calculator} The initialized calculator instance.
    */
-  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement) {
+  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton) {
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
     this.memoryIndicatorElement = memoryIndicatorElement
     this.historyTextElement = historyTextElement
+    this.historyCopyButton = historyCopyButton
     this.memory = 0
     this.clear()
   }
@@ -24,6 +26,7 @@ class Calculator {
    */
   clear() {
     this.history = ''
+    this.sessionHistory = []
     this.lastResult = undefined
     this.currentOperand = ''
     this.previousOperand = ''
@@ -254,6 +257,7 @@ class Calculator {
     this.lastOperand = current
     if (recordHistory && !repeating) {
       this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
+      this.sessionHistory.push(`${this.previousOperand}${this.operation}${this.currentOperand} = ${computation}`)
     }
     this.currentOperand = computation
     this.lastResult = computation
@@ -295,6 +299,14 @@ class Calculator {
     // Keep the badge in sync after every action, including recall and full clear.
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
+    if (this.historyCopyButton) {
+      this.historyCopyButton.disabled = this.sessionHistory.length === 0
+      if (this.historyCopyButton.disabled) {
+        if (this.copyConfirmationTimer !== undefined) clearTimeout(this.copyConfirmationTimer)
+        this.copyConfirmationTimer = undefined
+        this.historyCopyButton.innerText = 'Copy'
+      }
+    }
     this.currentOperandTextElement.innerText =
       this.errorMessage || this.getDisplayNumber(this.currentOperand)
     if (this.operation != null) {
@@ -325,9 +337,58 @@ const previousOperandTextElement = document.querySelector('[data-previous-operan
 const currentOperandTextElement = document.querySelector('[data-current-operand]')
 
 const historyTextElement = document.querySelector('[data-history]')
+const historyCopyButton = document.querySelector('[data-history-copy]')
 
 // Shared calculator instance used by all input handlers.
-const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement)
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton)
+
+// Clipboard API may be absent on file:// or denied by browser permissions.
+// Keep the fallback synchronous so it can still use the click's user activation.
+function copyWithTextarea(text) {
+  const textarea = document.createElement('textarea')
+  const focused = document.activeElement
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  try {
+    textarea.select()
+    return document.execCommand('copy')
+  } finally {
+    textarea.remove()
+    focused?.focus({ preventScroll: true })
+  }
+}
+
+historyCopyButton?.addEventListener('click', async () => {
+  const session = calculator.sessionHistory
+  if (session.length === 0) return
+  const text = session.join('\n')
+  let copied = false
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text)
+        copied = true
+      } catch {
+        copied = copyWithTextarea(text)
+      }
+    } else {
+      copied = copyWithTextarea(text)
+    }
+  } catch {
+    // Neither clipboard route succeeded; do not show a false confirmation.
+  }
+  // An AC/error reset during an asynchronous copy starts a new session.
+  if (!copied || session !== calculator.sessionHistory) return
+  if (calculator.copyConfirmationTimer !== undefined) clearTimeout(calculator.copyConfirmationTimer)
+  historyCopyButton.innerText = 'Copied'
+  calculator.copyConfirmationTimer = setTimeout(() => {
+    historyCopyButton.innerText = 'Copy'
+    calculator.copyConfirmationTimer = undefined
+  }, 1000)
+})
 
 // Numeric entry and arithmetic operation button events.
 numberButtons.forEach(button => {

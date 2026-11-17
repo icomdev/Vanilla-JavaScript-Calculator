@@ -195,14 +195,14 @@ test('every button has a readable name, with explicit names for symbolic control
     ['+', 'Add'], ['-', 'Subtract'], ['.', 'Decimal point'], ['=', 'Equals']
   ])
   const buttons = elements.filter(element => element.tagName === 'button')
-  assert.equal(buttons.length, 25)
+  assert.equal(buttons.length, 26)
   for (const button of buttons) {
     const label = button.getAttribute('aria-label')
     assert.ok((label || button.innerText).trim(), 'Every button needs an accessible name')
     if (symbolicNames.has(button.innerText)) {
       assert.equal(label, symbolicNames.get(button.innerText))
     } else {
-      assert.match(button.innerText, /^[0-9]$/)
+      assert.match(button.innerText, /^(?:[0-9]|Copy)$/)
     }
   }
 })
