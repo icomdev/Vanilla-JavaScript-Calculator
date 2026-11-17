@@ -46,13 +46,16 @@ Escape provides entry clearing, while Shift+Escape provides a full reset:
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear only the current entry; keep the pending operation and memory |
 | `Shift+Escape` | Full reset, including memory |
+| `c` or `C` | AC: clear the calculation and history, preserving memory; hold for 700 ms to also clear memory (Shift not required) |
 | `Backspace` | Delete the last character (DEL) |
 
 Keyboard shortcuts focus the matching on-screen button with a visible focus ring.
 Tab navigation also shows the ring; pointer clicks do not. Escape clears an error
 and resets repeated equals, without erasing calculation history. A short AC click
 continues to preserve memory; releasing or moving off AC before 700 ms cancels
-the full-reset hold.
+the full-reset hold. The `c`/`C` alias uses the same 700 ms hold; releasing
+the key or leaving the page cancels it. Holding Shift does not change this alias
+into an immediate memory reset.
 
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
 Shift is allowed (for example, to type `+` or `%`); `Shift+Escape` performs the

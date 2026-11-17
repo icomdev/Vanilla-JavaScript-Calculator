@@ -53,7 +53,7 @@ function setup() {
     focused: () => document.activeElement,
     memoryHidden: () => document.querySelector('[data-memory-indicator]').hidden,
     history: () => document.querySelector('[data-history]').innerText,
-    dispatch: type => listeners.get(type)(),
+    dispatch: (type, event = {}) => listeners.get(type)?.(event),
     runHold() {
       for (const [id, timer] of timers) {
         assert.equal(timer.delay, 700)
@@ -120,11 +120,11 @@ test('keyboard and pointer input can be mixed; equals key also computes', () => 
 test('unrelated keys and browser shortcuts do not change state or prevent defaults', () => {
   const app = setup()
   app.key('7')
-  for (const key of ['a', 'c', 'Delete', 'Tab', 'ArrowLeft', ' ', 'F5']) {
+  for (const key of ['a', 'Delete', 'Tab', 'ArrowLeft', ' ', 'F5']) {
     assert.equal(app.key(key), false)
   }
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
-    for (const key of ['1', '+', '%', 'k', 'Enter', 'Escape', 'Backspace']) {
+    for (const key of ['1', '+', '%', 'k', 'c', 'C', 'Enter', 'Escape', 'Backspace']) {
       assert.equal(app.key(key, { [modifier]: true }), false)
     }
   }
@@ -230,7 +230,7 @@ test('every mapped key focuses its corresponding button', () => {
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
     ['k', '%'], ['r', '√'], ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
-    ['Backspace', 'DEL'], ['Escape', 'AC']
+    ['Backspace', 'DEL'], ['c', 'AC'], ['C', 'AC'], ['Escape', 'AC']
   ]) {
     app.key(key)
     assert.equal(app.focused(), app.button(label), key)
@@ -415,3 +415,106 @@ test('percent has one button labelled with its sign-toggle action', () => {
   assert.equal(buttons.length, 1)
   assert.match(buttons[0][0], /aria-label="Toggle sign"/)
 })
+
+// AC alias matrix: case/Shift × calculation state × short/held activation.
+for (const [label, key, modifiers] of [
+  ['c without Shift', 'c', {}],
+  ['C uppercase', 'C', { shiftKey: true }],
+  ['C without Shift (Caps Lock)', 'C', {}],
+  ['c with Shift', 'c', { shiftKey: true }]
+]) {
+  for (const [state, keys] of [
+    ['entry', ['1', '2']],
+    ['pending operation', ['8', '+', '2']],
+    ['result', ['8', '+', '2', '=']],
+    ['error', ['8', '/', '0', '=']]
+  ]) {
+    test(`${label} short AC clears ${state} and preserves memory`, () => {
+      const app = setup()
+      app.key('7')
+      app.button('M+').click()
+      app.button('AC').click()
+      for (const digit of keys) app.key(digit)
+      assert.equal(app.key(key, modifiers), true)
+      assert.equal(app.focused(), app.button('AC'))
+      assert.equal(app.button('AC').clicks, 2)
+      assert.equal(app.display(), '')
+      assert.equal(app.previous(), '')
+      assert.equal(app.history(), '')
+      app.dispatch('keyup', { key })
+      app.runHold()
+      assert.equal(app.memoryHidden(), false)
+      app.key('3')
+      app.key('=')
+      assert.equal(app.display(), '3') // no pending or repeated operation
+      app.key('Escape')
+      app.key('r')
+      assert.equal(app.display(), '') // AC forgot the last result
+      app.button('MR').click()
+      assert.equal(app.display(), '7')
+    })
+  }
+
+  test(`${label} long AC alias clears memory after 700 ms`, () => {
+    const app = setup()
+    for (const digit of ['8', '+', '2', '=']) app.key(digit)
+    app.button('M+').click()
+    assert.equal(app.key(key, modifiers), true)
+    assert.equal(app.memoryHidden(), false)
+    // Auto-repeat must not restart the hold timer or dispatch extra clicks.
+    assert.equal(app.key(key, { ...modifiers, repeat: true }), true)
+    assert.equal(app.button('AC').clicks, 1)
+    app.dispatch('keyup', { key: 'Shift' })
+    app.runHold()
+    assert.equal(app.display(), '')
+    assert.equal(app.previous(), '')
+    assert.equal(app.history(), '')
+    assert.equal(app.memoryHidden(), true)
+    app.dispatch('keyup', { key: key === 'c' ? 'C' : 'c' })
+    app.button('MR').click()
+    assert.equal(app.display(), '0')
+  })
+}
+
+test('AC alias release cancels its hold and allows a later hold', () => {
+  const app = setup()
+  app.key('7')
+  app.button('M+').click()
+  app.key('c')
+  app.dispatch('keyup', { key: 'C' })
+  app.runHold()
+  assert.equal(app.memoryHidden(), false)
+  app.key('C')
+  app.runHold()
+  assert.equal(app.memoryHidden(), true)
+})
+
+test('AC aliases leave browser shortcuts, editable targets and composition untouched', () => {
+  const app = setup()
+  app.key('7')
+  app.button('M+').click()
+  for (const key of ['c', 'C']) {
+    for (const modifiers of [
+      { ctrlKey: true }, { metaKey: true }, { altKey: true },
+      { defaultPrevented: true }, { isComposing: true },
+      { target: { isContentEditable: true } },
+      { target: { closest: () => ({}) } }
+    ]) assert.equal(app.key(key, modifiers), false)
+  }
+  app.runHold()
+  assert.equal(app.display(), '7')
+  assert.equal(app.memoryHidden(), false)
+  assert.equal(app.button('AC').clicks, 0)
+})
+
+for (const event of ['visibilitychange', 'blur']) {
+  test(`${event} cancels an AC alias hold`, () => {
+    const app = setup()
+    app.key('7')
+    app.button('M+').click()
+    app.key('c')
+    app.dispatch(event)
+    app.runHold()
+    assert.equal(app.memoryHidden(), false)
+  })
+}

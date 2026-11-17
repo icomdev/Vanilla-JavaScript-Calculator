@@ -422,14 +422,17 @@ function cancelAllClearHold() {
   clearTimeout(allClearTimer)
   allClearTimer = undefined
 }
-allClearButton.addEventListener('pointerdown', event => {
-  if (event.button !== 0 || event.isPrimary === false) return
+function startAllClearHold() {
   cancelAllClearHold()
   allClearTimer = setTimeout(() => {
     allClearTimer = undefined
     calculator.fullClear()
     calculator.updateDisplay()
   }, 700)
+}
+allClearButton.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || event.isPrimary === false) return
+  startAllClearHold()
 })
 allClearButton.addEventListener('pointerleave', cancelAllClearHold)
 document.addEventListener('pointerup', cancelAllClearHold)
@@ -485,6 +488,8 @@ keyboardButtons.set('r', sqrtButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
+keyboardButtons.set('c', allClearButton)
+keyboardButtons.set('C', allClearButton)
 keyboardButtons.set('Backspace', deleteButton)
 
 document.addEventListener('keydown', event => {
@@ -507,10 +512,23 @@ document.addEventListener('keydown', event => {
     if (event.shiftKey) calculator.fullClear()
     else calculator.clearEntry()
     calculator.updateDisplay()
+  } else if (event.key === 'c' || event.key === 'C') {
+    // One click per physical press; auto-repeat must not restart the hold.
+    if (!event.repeat) {
+      button.click()
+      startAllClearHold()
+    }
   } else {
     button.click()
   }
 })
+
+document.addEventListener('keyup', event => {
+  if (event.key === 'c' || event.key === 'C') cancelAllClearHold()
+})
+document.addEventListener('visibilitychange', cancelAllClearHold)
+// Capture focus leaving the page as well as switching tabs.
+document.addEventListener('blur', cancelAllClearHold, true)
 
 // Percent button event, also invoked by the keyboard alias.
 percentButton.addEventListener('click', () => {
