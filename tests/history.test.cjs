@@ -5,6 +5,7 @@ const vm = require('node:vm')
 
 function setup(options = {}) {
   const writes = [], textareas = []
+  const documentHandlers = {}
   const timers = new Map()
   let now = 0, timerId = 0
   const focus = { restored: 0, focus() { this.restored++ } }
@@ -24,7 +25,8 @@ function setup(options = {}) {
     setTimeout(handler, delay) { const id = ++timerId; timers.set(id, { handler, at: now + delay }); return id },
     clearTimeout(id) { timers.delete(id) },
     document: {
-      querySelector: element, querySelectorAll: () => [], addEventListener() {},
+      querySelector: element, querySelectorAll: () => [],
+      addEventListener(event, handler) { documentHandlers[event] = handler },
       activeElement: focus,
       body: { appendChild(node) { textareas.push(node); node.attached = true } },
       createElement(tag) {
@@ -48,6 +50,7 @@ function setup(options = {}) {
     text: selector => element(selector).innerText,
     button: () => element('[data-history-copy]'),
     writes, textareas, focus,
+    keydown: event => documentHandlers.keydown(event),
     advance(ms) {
       now += ms
       for (const [id, timer] of timers) {
@@ -206,4 +209,15 @@ test('editing, memory, sqrt and chaining preserve session; errors and full reset
   assert.equal(app.button().disabled, true)
   await app.click('[data-history-copy]')
   assert.equal(app.writes.length, 1)
+})
+
+
+test('Enter on Copy retains native activation rather than computing equals', () => {
+  const app = setup()
+  app.complete()
+  const before = app.run('calculator.currentOperand')
+  let prevented = false
+  app.keydown({ key: 'Enter', target: app.button(), preventDefault() { prevented = true } })
+  assert.equal(prevented, false)
+  assert.equal(app.run('calculator.currentOperand'), before)
 })

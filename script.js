@@ -494,6 +494,9 @@ document.addEventListener('keydown', event => {
   const target = event.target
   if (target?.isContentEditable || target?.closest?.('input, textarea, select')) return
 
+  // Let Enter activate Copy natively rather than dispatching equals.
+  if (target === historyCopyButton && event.key === 'Enter') return
+
   const button = keyboardButtons.get(event.key)
   if (!button) return
 
