@@ -149,3 +149,12 @@ The suites run the real script in Node's VM with lightweight DOM stubs:
 
 No dependencies or build step are needed. These are logic/event-handler tests,
 not browser rendering or visual tests.
+
+### Copy session history
+
+The small **Copy** button beside history copies all completed expressions in the
+current session, oldest first, as one `expression = result` per line. It is
+disabled until there is history and shows **Copied** for about one second after
+success. It uses the Clipboard API with a textarea fallback where unavailable or
+denied. AC, full reset, and division by zero also clear the copyable session;
+entry-only Escape preserves it. History is not saved across page reloads.

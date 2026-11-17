@@ -157,3 +157,33 @@ Validation after the markup/style refinement: `node --test tests/memory.test.cjs
 — **26 pass, 0 fail**; `node --test` — **375 pass, 0 fail** (16 tests over
 the original default branch, including the three existing PR regressions).
 The positioning check is a static CSS contract, not a browser screenshot test.
+
+## Copy session history (#100)
+
+Tests were added first in `tests/history.test.cjs`: the three existing tests
+passed and all eleven new tests failed before implementation. The last-expression
+display is unchanged. The new in-memory session records the same successful,
+non-repeating equals expressions, oldest first; each copied line uses
+`expression = result` without display grouping or a trailing newline. Entry clear,
+editing, memory, square root, and intermediate chaining preserve that session.
+AC/full reset and division-by-zero clear it, following existing history lifetime.
+Nothing is persisted across reloads.
+
+| Entry state × action → exit state | Named test |
+| --- | --- |
+| Initial markup → native, disabled Copy in history panel | `history panel has one native Copy button initially disabled` |
+| Empty / pending / incomplete equals → copy disabled; successful equals → enabled; AC after copy → disabled, Copy restored; new calculation → new session | `empty history disables copy until completed equals; AC disables and resets confirmation` |
+| Multiple expressions with negative and decimal operands / repeated and incomplete equals / pending operator → copy oldest-first lines, no calculator mutation | `copy formats session lines via {clipboard/unavailable/rejected/throws} without changing calculator state` |
+| Clipboard available → writeText; missing / rejected / synchronously throwing → selected fallback textarea, removed with focus restored | `copy formats session lines via {clipboard/unavailable/rejected/throws} without changing calculator state` |
+| Successful copy → Copied for 1000 ms; second copy before expiry → renewed confirmation | `confirmation resets after one second and a second copy restarts its timer` |
+| Fallback returns false / throws → cleanup and focus restoration, no false confirmation | `{fallbackFails/fallbackThrows} cleans up textarea without claiming success` |
+| Pending asynchronous copy → AC → late success cannot restore stale confirmation | `clearing while clipboard is pending cannot restore stale confirmation` |
+| Saved result → entry clear / sqrt / memory / chaining → accumulated lines; divide-by-zero / full reset → empty | `editing, memory, sqrt and chaining preserve session; errors and full reset clear it` |
+
+The existing accessible-button inventory was updated for the text-labelled Copy
+control. No unrelated production bug fixes or dependencies were needed. Tests use
+real event handlers, a lightweight DOM, clipboard stubs and deterministic timers;
+they do not claim to verify operating-system clipboard permissions in a browser.
+
+Validation: `node --test tests/history.test.cjs` — **14 pass, 0 fail**;
+`node --test` — **370 pass, 0 fail**. `git diff --check` passes.

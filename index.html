@@ -14,7 +14,10 @@
   <div class="calculator-grid" role="group" aria-label="Calculator">
     <div class="output" aria-live="polite" aria-atomic="true">
       <span data-memory-indicator class="memory-indicator" role="img" aria-label="Memory state" title="Memory contains a value" hidden>● M</span>
-      <div data-history class="history" role="group" aria-label="History"></div>
+      <div data-copy-panel class="history-panel">
+        <div data-history class="history" role="group" aria-label="History"></div>
+        <button data-history-copy type="button" disabled>Copy</button>
+      </div>
       <div data-previous-operand class="previous-operand"></div>
       <div data-current-operand class="current-operand"></div>
     </div>
