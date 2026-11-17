@@ -126,7 +126,7 @@ No dependencies or browser required.
 The current default branch already maintains a nonzero-memory indicator and
 updates it on M+, MR, MC, short AC, and long AC. The sweep therefore reuses that
 single indicator rather than adding a second state flag or changing memory
-semantics in `script.js`. The requested UI refinement adds a dot to the `M`
+semantics in `script.js`. The requested UI refinement adds a green dot to the `M`
 badge and positions it at the bottom-left of the output, directly above the
 memory controls. It remains hidden for zero (including cancellation to zero),
 and visible for either sign of nonzero memory. Its existing accessible name and
@@ -154,5 +154,6 @@ Tests first: **22 passed, 1 failed** before the UI refinement (the old `M`
 marker did not match the requested dot badge). All runtime transitions already
 passed; no production JavaScript bug or need for a behavior change was found.
 Validation after the markup/style refinement: `node --test tests/memory.test.cjs`
-— **23 pass, 0 fail**; `node --test` — **372 pass, 0 fail** (13 new tests).
+— **26 pass, 0 fail**; `node --test` — **375 pass, 0 fail** (16 tests over
+the original default branch, including the three existing PR regressions).
 The positioning check is a static CSS contract, not a browser screenshot test.
