@@ -56,6 +56,8 @@ clears memory, like `Shift+Escape`.
 - Ctrl, Command (Meta), or Alt combinations are ignored by the calculator and
   left to the browser/OS. Shift is allowed to type symbols such as `+`, `*`, and
   `%`; it also distinguishes `Shift+Escape` from `Escape`.
+- Text fields, editable content, IME composition, and events already handled
+  elsewhere are left alone; they do not trigger calculator shortcuts.
 - Other keys (for example, `a`, `c`, `Delete`, or arrow keys) are ignored by the
   shortcut handler and retain their normal browser behavior. Tab/Shift+Tab still
   navigate buttons; Space can activate a focused button through native browser

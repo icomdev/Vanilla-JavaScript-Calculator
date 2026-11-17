@@ -294,3 +294,61 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
   app.button('MR').click()
   assert.equal(app.display(), '0')
 })
+
+test('Enter computes once instead of activating the previously focused digit', () => {
+  const app = setup()
+  for (const key of ['2', '+', '3']) app.key(key)
+  assert.equal(app.focused(), app.button('3'))
+  assert.equal(app.key('Enter'), true, 'cancel native focused-button activation')
+  assert.equal(app.display(), '5')
+  assert.equal(app.history(), '2+3=5')
+  assert.equal(app.button('3').clicks, 1)
+  assert.equal(app.button('=').clicks, 1)
+  assert.equal(app.focused(), app.button('='))
+})
+
+for (const sequence of [
+  ['.', '5', '+', '1', '.', '2', 'Enter'],
+  ['2', '+', '3', '*', '4', 'Enter'],
+  ['5', '+', '3', '=', 'Enter'],
+  ['-', '1', '2', 'Backspace', '+', '4', '='],
+  ['1', '/', '0', 'Enter', '4', '+', '2', 'Enter'],
+  ['7', 'Backspace', 'Backspace', '.', '2', 'Enter']
+]) {
+  test(`keyboard/button parity: ${sequence.join(' ')}`, () => {
+    const keyboard = setup()
+    const pointer = setup()
+    const aliases = { '/': '÷', Enter: '=', Backspace: 'DEL' }
+    for (const key of sequence) {
+      assert.equal(keyboard.key(key), true)
+      pointer.button(aliases[key] || key).click()
+      assert.equal(keyboard.display(), pointer.display(), key)
+      assert.equal(keyboard.previous(), pointer.previous(), key)
+      assert.equal(keyboard.history(), pointer.history(), key)
+    }
+  })
+}
+
+test('text editing, composition, and handled events do not invoke shortcuts', () => {
+  const app = setup()
+  app.key('7')
+  const focused = app.focused()
+  for (const context of [
+    { isComposing: true },
+    { defaultPrevented: true },
+    { target: { isContentEditable: true } },
+    ...['input', 'textarea', 'select'].map(tag => ({
+      target: { closest(selector) {
+        assert.equal(selector, 'input, textarea, select')
+        return { tagName: tag.toUpperCase() }
+      } }
+    }))
+  ]) {
+    for (const key of ['1', '.', '+', '/', 'Enter', '=', 'Escape', 'Backspace']) {
+      assert.equal(app.key(key, context), false)
+    }
+    assert.equal(app.display(), '7')
+    assert.equal(app.focused(), focused)
+    assert.equal(app.button('7').clicks, 1)
+  }
+})
