@@ -101,14 +101,17 @@ class Calculator {
   }
 
   /**
-   * Divide a finite current entry by 100, preserving pending calculation state.
-   * Ignore empty, invalid, or non-finite entries.
+   * Toggle the sign of a finite current entry or displayed result.
+   * Preserve pending state and digits; ignore errors, zero, and invalid entries.
    * @returns {void}
    */
   percent() {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
-    this.currentOperand = (value / 100).toString()
+    if (this.errorMessage || value === 0) return
+    const entry = this.currentOperand.toString()
+    this.currentOperand = entry.startsWith('-') ? entry.slice(1) : '-' + entry
+    if (this.isResult) this.lastResult = Number(this.currentOperand)
   }
 
   /**
@@ -415,6 +418,7 @@ const keyboardButtons = new Map(
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
 keyboardButtons.set('%', percentButton)
+keyboardButtons.set('k', percentButton)
 keyboardButtons.set('r', sqrtButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)

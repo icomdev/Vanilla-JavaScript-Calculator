@@ -6,13 +6,6 @@ const { runInNewContext } = require('node:vm')
 
 const source = readFileSync(`${__dirname}/../script.js`, 'utf8')
 
-// Coverage matrix (kept here because #45 is restricted to this new file):
-// Entry state              | Operation        | Named test family
-// Integer/fraction/sign/0  | %                | percent divides ...
-// Standalone/pending entry | % then %         | repeated percent ...
-// Fresh/cleared/deleted    | % then input     | percent leaves ... entry unchanged
-// Empty pending operand    | % then operand = | percent preserves empty operand ...
-// Entered pending operand  | % then =         | percent preserves pending ...
 function createCalculator() {
   const buttons = new Map()
   const current = { innerText: '' }
@@ -57,12 +50,12 @@ function createCalculator() {
 }
 
 for (const [entry, expected] of [
-  ['50', '0.5'],
-  ['12.5', '0.125'],
-  ['-25', '-0.25'],
+  ['50', '-50'],
+  ['12.5', '-12.5'],
+  ['-25', '25'],
   ['0', '0']
 ]) {
-  test(`percent divides current entry ${entry} by 100`, () => {
+  test(`percent toggles current entry ${entry}`, () => {
     const calculator = createCalculator()
     calculator.press(...entry, '%')
     assert.equal(calculator.current.innerText, expected)
@@ -71,17 +64,17 @@ for (const [entry, expected] of [
 }
 
 for (const pending of [false, true]) {
-  test(`repeated percent divides again with ${pending ? 'a pending operation' : 'a standalone entry'}`, () => {
+  test(`repeated percent toggles back with ${pending ? 'a pending operation' : 'a standalone entry'}`, () => {
     const calculator = createCalculator()
     if (pending) calculator.press('2', '0', '0', '+')
     calculator.press('5', '0', '%')
-    assert.equal(calculator.current.innerText, '0.5')
+    assert.equal(calculator.current.innerText, '-50')
     calculator.press('%')
-    assert.equal(calculator.current.innerText, '0.005')
+    assert.equal(calculator.current.innerText, '50')
     assert.equal(calculator.previous.innerText, pending ? '200 +' : '')
     if (pending) {
       calculator.press('=')
-      assert.equal(calculator.current.innerText, '200.005')
+      assert.equal(calculator.current.innerText, '250')
       assert.equal(calculator.previous.innerText, '')
     }
   })
@@ -103,10 +96,10 @@ for (const [state, setup] of [
 }
 
 for (const [operator, percentResult, normalResult] of [
-  ['+', '200.1', '210'],
-  ['-', '199.9', '190'],
-  ['*', '20', '2,000'],
-  ['÷', '2,000', '20']
+  ['+', '190', '210'],
+  ['-', '210', '190'],
+  ['*', '-2,000', '2,000'],
+  ['÷', '-20', '20']
 ]) {
   test(`percent preserves empty operand and pending ${operator}`, () => {
     const calculator = createCalculator()
@@ -118,10 +111,10 @@ for (const [operator, percentResult, normalResult] of [
     assert.equal(calculator.previous.innerText, '')
   })
 
-  test(`percent preserves pending ${operator} while scaling only the current entry`, () => {
+  test(`percent preserves pending ${operator} while toggling only the current entry`, () => {
     const calculator = createCalculator()
     calculator.press('2', '0', '0', operator, '1', '0', '%')
-    assert.equal(calculator.current.innerText, '0.1')
+    assert.equal(calculator.current.innerText, '-10')
     assert.equal(calculator.previous.innerText, `200 ${operator}`)
     calculator.press('=')
     assert.equal(calculator.current.innerText, percentResult)

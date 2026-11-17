@@ -257,16 +257,14 @@ test('repeated minus does not stack signs; equals waits for a number', () => {
   assert.equal(calculator.current.innerText, '-1')
 })
 
-test('percent divides the entry repeatedly, including scientific notation', () => {
+test('percent toggles the entry repeatedly without changing digits', () => {
   const calculator = createCalculator()
   calculator.press('5', '0', '%')
-  assert.equal(calculator.current.innerText, '0.5')
+  assert.equal(calculator.current.innerText, '-50')
   calculator.press('%')
-  assert.equal(calculator.current.innerText, '0.005')
+  assert.equal(calculator.current.innerText, '50')
   calculator.press('%', '%')
-  assert.equal(calculator.current.innerText, '5e-7')
-  calculator.press('%')
-  assert.equal(calculator.current.innerText, '5e-9')
+  assert.equal(calculator.current.innerText, '50')
 })
 
 test('percent with no entry leaves the display and pending operation unchanged', () => {
@@ -277,10 +275,10 @@ test('percent with no entry leaves the display and pending operation unchanged',
   assert.equal(calculator.current.innerText, '')
   assert.equal(calculator.previous.innerText, '200 +')
   calculator.press('1', '0', '%')
-  assert.equal(calculator.current.innerText, '0.1')
+  assert.equal(calculator.current.innerText, '-10')
   assert.equal(calculator.previous.innerText, '200 +')
   calculator.press('=')
-  assert.equal(calculator.current.innerText, '200.1')
+  assert.equal(calculator.current.innerText, '190')
 })
 
 test('percent supports zero, negative entries, and computed results', () => {
@@ -288,11 +286,11 @@ test('percent supports zero, negative entries, and computed results', () => {
   calculator.press('0', '%')
   assert.equal(calculator.current.innerText, '0')
   calculator.press('AC', '5', '+/-', '%')
-  assert.equal(calculator.current.innerText, '-0.05')
+  assert.equal(calculator.current.innerText, '5')
   calculator.press('AC', '2', '5', '*', '2', '=', '%')
-  assert.equal(calculator.current.innerText, '0.5')
+  assert.equal(calculator.current.innerText, '-50')
   calculator.press('+', '1', '=')
-  assert.equal(calculator.current.innerText, '1.5')
+  assert.equal(calculator.current.innerText, '-49')
 })
 
 test('percent leaves an error unchanged', () => {
@@ -344,15 +342,15 @@ test('sign toggle after equals is inactive until a new number entry', () => {
   assert.equal(calculator.current.innerText, '34')
 })
 
-for (const [operator, result] of [['+', '199.9'], ['-', '200.1'], ['*', '-20'], ['÷', '-2,000']]) {
+for (const [operator, result] of [['+', '210'], ['-', '190'], ['*', '2,000'], ['÷', '20']]) {
   for (const order of [['%', '+/-'], ['+/-', '%']]) {
-    test(`pending ${operator} with ${order.join(' then ')} uses the signed percent entry`, () => {
+    test(`pending ${operator} with ${order.join(' then ')} toggles the entry twice`, () => {
       const calculator = createCalculator()
       calculator.press('2', '0', '0', operator, '%', '+/-')
       assert.equal(calculator.current.innerText, '')
       assert.equal(calculator.previous.innerText, `200 ${operator}`)
       calculator.press('1', '0', ...order)
-      assert.equal(calculator.current.innerText, '-0.1')
+      assert.equal(calculator.current.innerText, '10')
       assert.equal(calculator.previous.innerText, `200 ${operator}`)
       calculator.press('=')
       assert.equal(calculator.current.innerText, result)
