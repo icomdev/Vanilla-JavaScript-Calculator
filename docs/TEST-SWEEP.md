@@ -211,3 +211,40 @@ The implementation adds only the requested aliases and shares AC's existing
 hold timer; no unrelated behavior fixes or dependencies were needed.
 
 Validation: `node --test` — **383 pass, 0 fail**.
+
+## Square-root approximation feedback (#111)
+
+All new cells use real markup, click handlers and keyboard dispatch in
+`tests/tilde.test.cjs`, with no dependencies or browser. `{path}` expands to
+`r` and `√`; `{operator}` expands to `+`, `-`, `*`, `÷`. Approximation is
+operand provenance: new entry text is bare, but a pending rounded operand or
+remembered repeat-equals operand still makes its computed result approximate.
+Memory recall replaces the entry with its stored numeric value, not its marker.
+Saved sqrt fallback retains provenance across entry clear. Neither internal
+numeric operands nor history strings contain the presentation-only prefix.
+
+| Entry state × action → exit state | Named test(s) |
+| --- | --- |
+| Integer / zero / rational fraction / grouped integer / irrational integer or fraction × keyboard or button sqrt → bare or prefixed result; M+ / MR → bare numeric recall | `{path} sqrt of {entry} renders {expected} without changing numeric input` (20 cells) |
+| Rounded left or right operand × four operators → equals / repeat equals / chain / new digit | `approximate {left/right} operand survives {operator}, repeat equals and operator chaining` (8 cells; also checks pending display and raw history) |
+| Rounded equals result × digit / rejected decimal / DEL / ⌫ / Escape / AC / full reset / MR → replaced entry bare, rejected decimal unchanged | `approximate result then {action} clears only the replaced entry marker` (8 cells) |
+| Rooted entry → appended digit vs ordinary nonterminating division → bare text | `editing a rooted entry starts a bare entry; ordinary fractions remain bare` |
+| Rounded entry → sign toggle / negative sqrt no-op / sign toggle / second sqrt → prefix preserved | `unary sign, ignored negative sqrt and repeated sqrt preserve approximation` |
+| Saved rounded result → entry cleared via Escape or repeated DEL → fallback sqrt → approximate | `saved approximate result survives {Escape/DEL} then sqrt fallback` |
+| Rounded operand → division by zero / ignored sqrt / numeric recovery → unprefixed error and rational root | `division error clears approximation and recovery stays bare` |
+| Rounded entry → M+ / MC / rejected decimal → unchanged; MR → bare zero | `memory actions and rejected decimal preserve marker until recall replaces entry` |
+| Rounded left operand × four operators → intermediate chain / new right entry / CE / replacement right entry → approximate result | `intermediate {operator} chaining carries the marker through a new right entry` |
+| Rounded repeat operand → new digit → bare; repeat equals → approximate; AC / normal equals → bare | `new standalone entry does not inherit marker but repeat equals retains its approximate operand` |
+| Small / large / exponent-form decimal input → rational sqrt → bare fixed or scientific notation | `scientific-notation input {entry} has bare rational root {expected}` (3 cells) |
+
+Tests first: the initial matrix exposed **28 failing cases** against the old
+rendering path. The implementation adds display-only provenance flags and tests
+rational roots using the decimal coefficient and power of ten, avoiding the
+false irrational classification from `0.1 * 0.1 !== 0.01`. Two existing sqrt
+fallback expectations now include the requested `~`. Arithmetic, history,
+memory values and keyboard routing are unchanged; no unrelated bug fix was
+needed. No button label change is necessary: the feedback is in the existing
+live output, as requested in the issue body.
+
+Validation: `node --test tests/tilde.test.cjs` — **50 pass, 0 fail**;
+`node --test` — **475 pass, 0 fail**. `git diff --check` passes.

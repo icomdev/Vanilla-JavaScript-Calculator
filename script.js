@@ -27,6 +27,10 @@ class Calculator {
   clear() {
     this.history = ''
     this.sessionHistory = []
+    this.currentApproximate = false
+    this.previousApproximate = false
+    this.lastResultApproximate = false
+    this.lastOperandApproximate = false
     this.lastResult = undefined
     this.currentOperand = ''
     this.previousOperand = ''
@@ -43,6 +47,8 @@ class Calculator {
    * @returns {void}
    */
   clearEntry() {
+    this.currentApproximate = false
+    this.lastOperandApproximate = false
     this.currentOperand = ''
     this.isResult = false
     this.errorMessage = ''
@@ -79,6 +85,7 @@ class Calculator {
   recallMemory() {
     if (this.errorMessage) this.clear()
     this.currentOperand = this.memory.toString()
+    this.currentApproximate = false
   }
 
   /**
@@ -99,6 +106,7 @@ class Calculator {
       this.clear()
       return
     }
+    if (this.currentOperand !== '') this.currentApproximate = false
     this.currentOperand = this.currentOperand.toString().slice(0, -1)
     if (this.currentOperand === '-') this.currentOperand = ''
   }
@@ -128,9 +136,30 @@ class Calculator {
     const empty = this.currentOperand === ''
     const value = empty ? this.lastResult : parseFloat(this.currentOperand)
     if (!Number.isFinite(value) || value < 0) return
+    // Track provenance, not the floating-point text: later arithmetic may still
+    // depend on a rounded root, even if its displayed result looks integral.
+    this.currentApproximate = (empty ? this.lastResultApproximate : this.currentApproximate) ||
+      !this.hasRationalSquareRoot(value)
+    this.lastResultApproximate = this.currentApproximate
     this.currentOperand = Math.sqrt(value).toString()
     this.lastResult = Number(this.currentOperand)
     if (empty) this.isResult = true
+  }
+
+  /**
+   * Test the finite decimal input exactly, avoiding floating-point square tests
+   * (for example 0.1 * 0.1 !== 0.01). Powers of ten with even exponents are
+   * rational squares; the remaining integer coefficient must be a square too.
+   * @param {number} value - Finite nonnegative input.
+   * @returns {boolean} Whether its decimal value has a rational square root.
+   */
+  hasRationalSquareRoot(value) {
+    const [mantissa, exponent = '0'] = value.toString().split('e')
+    const decimals = (mantissa.split('.')[1] || '').length
+    let coefficient = BigInt(mantissa.replace('.', ''))
+    if ((Number(exponent) - decimals) % 2 !== 0) coefficient *= 10n
+    const root = BigInt(Math.round(Math.sqrt(Number(coefficient))))
+    return root * root === coefficient
   }
 
   /**
@@ -153,6 +182,7 @@ class Calculator {
   backspace() {
     const entry = this.currentOperand.toString()
     if (entry === '' || entry === '-' || entry === '-0') return
+    this.currentApproximate = false
     if (entry.length === 1) {
       this.currentOperand = '0'
       return
@@ -176,6 +206,7 @@ class Calculator {
     }
     const currentOperand = this.currentOperand.toString()
     if (number === '.' && currentOperand.includes('.')) return
+    this.currentApproximate = false
     this.currentOperand = number === '.' && currentOperand === ''
       ? '0.'
       : currentOperand + number.toString()
@@ -197,6 +228,7 @@ class Calculator {
     if (this.currentOperand === '' || this.currentOperand === '-') {
       if (operation === '-') {
         this.currentOperand = '-'
+        this.currentApproximate = false
       } else if (this.previousOperand !== '') {
         this.operation = operation
         this.currentOperand = ''
@@ -209,7 +241,9 @@ class Calculator {
     }
     this.operation = operation
     this.previousOperand = this.currentOperand
+    this.previousApproximate = this.currentApproximate
     this.currentOperand = ''
+    this.currentApproximate = false
     this.isResult = false
   }
 
@@ -253,6 +287,11 @@ class Calculator {
       default:
         return
     }
+    const rightApproximate = repeating ? this.lastOperandApproximate : this.currentApproximate
+    this.currentApproximate = (repeating ? this.currentApproximate : this.previousApproximate) || rightApproximate
+    this.lastResultApproximate = this.currentApproximate
+    this.lastOperandApproximate = rightApproximate
+    this.previousApproximate = false
     this.lastOperation = operation
     this.lastOperand = current
     if (recordHistory && !repeating) {
@@ -308,10 +347,10 @@ class Calculator {
       }
     }
     this.currentOperandTextElement.innerText =
-      this.errorMessage || this.getDisplayNumber(this.currentOperand)
+      this.errorMessage || `${this.currentApproximate && this.currentOperand !== '' ? '~' : ''}${this.getDisplayNumber(this.currentOperand)}`
     if (this.operation != null) {
       this.previousOperandTextElement.innerText =
-        `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`
+        `${this.previousApproximate ? '~' : ''}${this.getDisplayNumber(this.previousOperand)} ${this.operation}`
     } else {
       this.previousOperandTextElement.innerText = ''
     }

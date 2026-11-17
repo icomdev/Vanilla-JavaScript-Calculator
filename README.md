@@ -161,3 +161,15 @@ disabled until there is history and shows **Copied** for about one second after
 success. It uses the Clipboard API with a textarea fallback where unavailable or
 denied. AC, full reset, and division by zero also clear the copyable session;
 entry-only Escape preserves it. History is not saved across page reloads.
+
+### Square-root rounding feedback
+
+`√` (keyboard `r`) prefixes an irrational square-root result with `~`, for
+example `2 r` displays `~1.4142135623730951`; rational roots such as `9 r`
+(`3`) and `0.01 r` (`0.1`) stay bare. The marker is display-only, not part of
+the stored number or copied history. It follows rounded operands through pending
+operations, chaining, repeated equals, and sign changes—even if a later result
+looks integral. Typing/editing a new entry, recalling memory, or clearing removes
+that entry's marker; a pending rounded operand still marks the eventual result.
+A rejected duplicate decimal point does not remove it. Ordinary arithmetic
+without a rounded square root keeps its existing display.
