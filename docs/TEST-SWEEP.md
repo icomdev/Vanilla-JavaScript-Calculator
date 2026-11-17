@@ -52,7 +52,7 @@ the one new key, and its symbolic-name map now includes square root.
 Validation: **297 tests pass** (`node --test`), including all **21** square-root
 cases (`node --test tests/sqrt.test.js`). No unrelated behavior fixes were needed.
 
-## Percent sign key (#93)
+## Additional percent path parity matrix (#93)
 
 The original divide-by-100 behavior described above is superseded by #93.
 The existing `%` button now toggles the current entry/result sign. `k` and `%`
@@ -95,3 +95,28 @@ longer described the action; the minimal regression fix renames it “Toggle sig
 No other calculator behavior changes were needed beyond the requested feature.
 
 Validation: `node --test`: **313 tests pass**, no dependencies added.
+## Percent sign key (#93)
+
+The existing `%` button is repurposed as requested (no duplicate button).
+`k` and `%` dispatch its single click handler, like `r` does for square root.
+Unlike the older `+/-` control, this control also toggles displayed results.
+The earlier percent/divide-by-100 matrix above describes historical behavior;
+its existing tests now assert sign toggling and composition of the two sign controls.
+
+All new cells live in `tests/percent-sign.test.js`; `{path}` expands to
+`button`, `k`, and `%`. Every intermediate sign is asserted to detect double mutation.
+
+| Entry state × action → exit state | Named test |
+| --- | --- |
+| Positive / negative / trailing decimal / small fraction × three activations → alternating signs, same digits | `{path} toggles {12/-12.50/12./0.05} once per activation preserving digits` |
+| Empty / lone minus / zero / error / empty pending × activation → unchanged | `{path} leaves {empty/lone minus/zero/error/empty pending} unchanged` |
+| Pending binary operation × toggle right entry → signed computation | `{path} transforms only the right entry of pending {+/-/*/÷}` |
+| Equals result × toggle / repeat equals / new digit → signed result, preserved repeat state, fresh entry | `{path} toggles results preserving history and repeated equals` |
+| Memory recall × toggle / sqrt / toggle / sqrt → memory preserved, negative sqrt ignored | `{path} preserves memory and composes with square root` |
+| Modified k / ordinary k / repeated keydown → browser untouched / one toggle each, focus | `k focuses percent and ignores modified browser shortcuts` |
+
+Tests were added before implementation and exposed the old scaling behavior and
+missing `k` route. This is the requested behavior replacement, not an unrelated
+bug fix. Existing percent expectations and the accessible label were updated.
+Validation: `node --test` — **359 pass, 0 fail**, including **46 new matrix tests**.
+No dependencies or browser required.
