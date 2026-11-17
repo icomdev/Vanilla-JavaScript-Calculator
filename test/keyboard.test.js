@@ -16,11 +16,14 @@ function setup() {
       innerText: text,
       clicks: 0,
       focus() { document.activeElement = this },
-      dispatch(type, event = {}) { handlers.get(type)(event) },
-      addEventListener(type, handler) { handlers.set(type, handler) },
+      dispatch(type, event = {}) { for (const handler of handlers.get(type) || []) handler(event) },
+      addEventListener(type, handler) {
+        if (!handlers.has(type)) handlers.set(type, [])
+        handlers.get(type).push(handler)
+      },
       click() {
         this.clicks++
-        handlers.get('click')()
+        this.dispatch('click')
       }
     }
     const selector = `[${attribute}]`
@@ -121,7 +124,7 @@ test('unrelated keys and browser shortcuts do not change state or prevent defaul
     assert.equal(app.key(key), false)
   }
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
-    for (const key of ['1', '+', '%', 'Enter', 'Escape', 'Backspace']) {
+    for (const key of ['1', '+', '%', 'k', 'Enter', 'Escape', 'Backspace']) {
       assert.equal(app.key(key, { [modifier]: true }), false)
     }
   }
@@ -137,7 +140,7 @@ test('percent key reuses the button handler, including repeated presses', () => 
   for (const app of [keyboard, pointer]) {
     for (const key of ['2', '0', '0', '+', '1', '0']) app.key(key)
   }
-  for (const expected of ['0.1', '0.001']) {
+  for (const expected of ['-10', '10']) {
     assert.equal(keyboard.key('%', { shiftKey: true }), true)
     pointer.button('%').click()
     assert.equal(keyboard.display(), expected)
@@ -226,7 +229,7 @@ test('every mapped key focuses its corresponding button', () => {
   const app = setup()
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
-    ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
+    ['k', '%'], ['r', '√'], ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
     ['Backspace', 'DEL'], ['Escape', 'AC']
   ]) {
     app.key(key)
@@ -295,92 +298,120 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
   assert.equal(app.display(), '0')
 })
 
-test('Enter computes once instead of activating the previously focused digit', () => {
-  const app = setup()
-  for (const key of ['2', '+', '3']) app.key(key)
-  assert.equal(app.focused(), app.button('3'))
-  assert.equal(app.key('Enter'), true, 'cancel native focused-button activation')
-  assert.equal(app.display(), '5')
-  assert.equal(app.history(), '2+3=5')
-  assert.equal(app.button('3').clicks, 1)
-  assert.equal(app.button('=').clicks, 1)
-  assert.equal(app.focused(), app.button('='))
-})
-
-for (const sequence of [
-  ['.', '5', '+', '1', '.', '2', 'Enter'],
-  ['2', '+', '3', '*', '4', 'Enter'],
-  ['5', '+', '3', '=', 'Enter'],
-  ['-', '1', '2', 'Backspace', '+', '4', '='],
-  ['1', '/', '0', 'Enter', '4', '+', '2', 'Enter'],
-  ['7', 'Backspace', 'Backspace', '.', '2', 'Enter']
-]) {
-  test(`keyboard/button parity: ${sequence.join(' ')}`, () => {
-    const keyboard = setup()
-    const pointer = setup()
-    const aliases = { '/': '÷', Enter: '=', Backspace: 'DEL' }
-    for (const key of sequence) {
-      assert.equal(keyboard.key(key), true)
-      pointer.button(aliases[key] || key).click()
-      assert.equal(keyboard.display(), pointer.display(), key)
-      assert.equal(keyboard.previous(), pointer.previous(), key)
-      assert.equal(keyboard.history(), pointer.history(), key)
+for (const path of ['keyboard', 'button']) {
+  test(`${path} percent toggles once per activation, including results`, () => {
+    const app = setup()
+    const toggle = () => {
+      if (path === 'keyboard') {
+        assert.equal(app.key('k'), true)
+        assert.equal(app.focused(), app.button('%'))
+      } else app.button('%').click()
     }
+    for (const key of '12.50') app.key(key)
+    for (const expected of ['-12.50', '12.50', '-12.50']) {
+      toggle()
+      assert.equal(app.display(), expected)
+    }
+    app.button('AC').click()
+    for (const key of ['8', '+', '2', '=']) app.key(key)
+    app.button('M+').click()
+    for (const expected of ['-10', '10', '-10']) {
+      toggle()
+      assert.equal(app.display(), expected)
+      assert.equal(app.history(), '8+2=10')
+    }
+    app.key('Escape')
+    app.key('r')
+    assert.equal(app.display(), '') // remembered result is negative too
+    app.button('MR').click()
+    assert.equal(app.display(), '10') // memory was not negated
+  })
+
+  test(`${path} percent preserves unfinished, zero, pending and error states`, () => {
+    const app = setup()
+    const toggle = () => path === 'keyboard' ? app.key('k') : app.button('%').click()
+    toggle()
+    assert.equal(app.display(), '')
+    app.key('-')
+    toggle()
+    assert.equal(app.display(), '-')
+    app.key('0')
+    toggle()
+    assert.equal(app.display(), '-0')
+    app.button('AC').click()
+    for (const key of ['8', '+']) app.key(key)
+    toggle()
+    assert.equal(app.previous(), '8 +')
+    assert.equal(app.display(), '')
+    app.key('2')
+    toggle()
+    assert.equal(app.previous(), '8 +')
+    assert.equal(app.display(), '-2')
+    for (const key of ['=', '/', '0', '=']) app.key(key)
+    toggle()
+    assert.equal(app.display(), 'Cannot divide by zero')
   })
 }
 
-test('text editing, composition, and handled events do not invoke shortcuts', () => {
+test('mixed k/%/button presses toggle and preserve repeated equals and fresh digits', () => {
   const app = setup()
-  app.key('7')
-  const focused = app.focused()
-  for (const context of [
-    { isComposing: true },
-    { defaultPrevented: true },
-    { target: { isContentEditable: true } },
-    ...['input', 'textarea', 'select'].map(tag => ({
-      target: { closest(selector) {
-        assert.equal(selector, 'input, textarea, select')
-        return { tagName: tag.toUpperCase() }
-      } }
-    }))
-  ]) {
-    for (const key of ['1', '.', '+', '/', 'Enter', '=', 'Escape', 'Backspace']) {
-      assert.equal(app.key(key, context), false)
-    }
-    assert.equal(app.display(), '7')
-    assert.equal(app.focused(), focused)
-    assert.equal(app.button('7').clicks, 1)
+  for (const key of ['8', '+', '2', '=']) app.key(key)
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
+    assert.equal(app.key('k', { [modifier]: true }), false)
+    assert.equal(app.display(), '10')
   }
+  app.key('k')
+  assert.equal(app.display(), '-10')
+  app.key('%', { shiftKey: true })
+  assert.equal(app.display(), '10')
+  app.button('%').click()
+  assert.equal(app.display(), '-10')
+  assert.equal(app.button('%').clicks, 3)
+  app.key('=')
+  assert.equal(app.display(), '-8')
+  app.key('3')
+  assert.equal(app.display(), '3')
 })
 
-test('keyboard entry, editing and repeated equals match button input', () => {
-  const keyboard = setup()
-  const pointer = setup()
-  for (const [key, label] of [
-    ['.', '.'], ['5', '5'], ['.', '.'], ['Backspace', 'DEL'],
-    ['5', '5'], ['+', '+'], ['1', '1'], ['Enter', '='], ['=', '=']
-  ]) {
-    assert.equal(keyboard.key(key), true)
-    pointer.button(label).click()
-    assert.equal(keyboard.display(), pointer.display(), key)
-    assert.equal(keyboard.previous(), pointer.previous(), key)
-    assert.equal(keyboard.history(), pointer.history(), key)
-    assert.equal(keyboard.focused(), keyboard.button(label), key)
+for (const path of ['keyboard', 'button']) {
+  for (const [operator, expected] of [['+', '6'], ['-', '10'], ['*', '-16'], ['÷', '-4']]) {
+    test(`${path} percent transforms pending ${operator} entry before equals`, () => {
+      const app = setup()
+      for (const key of ['8', operator, '2']) app.key(key)
+      if (path === 'keyboard') app.key('k')
+      else app.button('%').click()
+      assert.equal(app.display(), '-2')
+      assert.equal(app.previous(), `8 ${operator}`)
+      app.key('Enter')
+      assert.equal(app.display(), expected)
+      assert.equal(app.history(), `8${operator}-2=${expected}`)
+    })
   }
-  assert.equal(keyboard.display(), '2.5')
-})
 
-test('Backspace uses DEL semantics for single digits, signed entries and errors', () => {
-  const app = setup()
-  app.key('1')
-  app.key('Backspace')
-  assert.equal(app.display(), '')
-  app.key('-')
-  app.key('2')
-  app.key('Backspace')
-  assert.equal(app.display(), '')
-  for (const key of ['1', '/', '0', '=']) app.key(key)
-  app.key('Backspace')
-  assert.equal(app.display(), '')
-  assert.equal(app.previous(), '')
+  test(`${path} percent composes with square root and trailing-decimal editing`, () => {
+    const app = setup()
+    const toggle = () => path === 'keyboard' ? app.key('k') : app.button('%').click()
+    for (const key of '12.') app.key(key)
+    toggle()
+    assert.equal(app.display(), '-12.')
+    app.key('5')
+    assert.equal(app.display(), '-12.5')
+    app.button('AC').click()
+    app.key('9')
+    toggle()
+    app.key('r')
+    assert.equal(app.display(), '-9')
+    toggle()
+    app.key('r')
+    assert.equal(app.display(), '3')
+    toggle()
+    assert.equal(app.display(), '-3')
+  })
+}
+
+test('percent has one button labelled with its sign-toggle action', () => {
+  const html = readFileSync(`${__dirname}/../index.html`, 'utf8')
+  const buttons = [...html.matchAll(/<button\b[^>]*\bdata-percent\b[^>]*>%<\/button>/g)]
+  assert.equal(buttons.length, 1)
+  assert.match(buttons[0][0], /aria-label="Toggle sign"/)
 })

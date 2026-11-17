@@ -20,7 +20,7 @@ Open `index.html` in a browser to use the calculator.
 | `7` | Adds 7 to the current number. |
 | `8` | Adds 8 to the current number. |
 | `9` | Adds 9 to the current number. |
-| `%` | Divides the current entry by 100; repeat to divide again. Empty entries are unchanged. Preserves pending operations (200 + 10 % = 200.1). |
+| `%` | Toggles the sign of the current entry or displayed result; each press toggles again (200 + 10 % = 190). Empty entries, zero, and errors are unchanged. This key does not divide by 100. |
 | `=` | Shows the result; press again to repeat the last operator and operand on the displayed value (e.g. `5 + 3 = =` gives `11`). |
 | `AC` | Clears both numbers, the selected operator, and the remembered operation for repeated equals. Hold for 700 ms to also clear memory. |
 | `DEL` | Removes the last character of the current number. |
@@ -41,7 +41,7 @@ Escape provides entry clearing, while Shift+Escape provides a full reset:
 | --- | --- |
 | `0`–`9`, `.` | Enter digits or a decimal point |
 | `+`, `-`, `*`, `/` or `÷` | Add, subtract, multiply, or divide |
-| `%` | Divide the current entry by 100 (same as the percent button) |
+| `k` or `%` | Toggle the current entry/result sign once (same as `%`); repeated presses keep toggling |
 | `r` | Take the square root (same as `√`); see the [keyboard guide](docs/KEYBOARD.md) |
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear only the current entry; keep the pending operation and memory |
