@@ -64,3 +64,34 @@ Existing percent and cross-feature expectations were updated accordingly.
 `test/keyboard.test.js` checks chained/mixed keyboard and button presses,
 results, focus, browser shortcuts, no-op states, and pending operations.
 Its button stub retains all listeners so duplicate click wiring cannot hide.
+
+### State-transition matrix
+
+`{path}` expands to `keyboard` (`k`) and `button` (`%`). All rows run
+real event handlers; the keyboard harness reads the actual HTML. Zero is
+intentionally unchanged, consistent with the existing sign control. Empty
+entries do not fall back to the last result (unlike square root).
+
+| Matrix cell | Test name(s) |
+| --- | --- |
+| Positive / negative / fraction / zero entry → toggle | `percent toggles current entry {50/12.5/-25/0}` (`tests/percent.test.js`) |
+| Standalone / pending entry → toggle twice → original entry | `repeated percent toggles back with {a pending operation/a standalone entry}` |
+| Fresh / AC / DEL → empty → toggle → input | `percent leaves {fresh/cleared/deleted} empty entry unchanged` |
+| Empty right operand × all four operators → toggle → normal calculation | `percent preserves empty operand and pending {operator}` |
+| Entered right operand × all four operators × both input paths → toggle → equals/history | `{path} percent transforms pending {operator} entry before equals` (`test/keyboard.test.js`) |
+| Both input paths → repeated entry/result toggles → entry clear → sqrt / memory recall | `{path} percent toggles once per activation, including results` |
+| Both input paths × empty / lone minus / negative zero / pending / error → unchanged surrounding state | `{path} percent preserves unfinished, zero, pending and error states` |
+| Keyboard `%` alias vs button → repeated toggles, same pending operation | `percent key reuses the button handler, including repeated presses` |
+| Mixed k / % / button → repeat equals / new digit; modified k → browser-owned | `mixed k/%/button presses toggle and preserve repeated equals and fresh digits` |
+| Both input paths → trailing-decimal editing / negative sqrt no-op / positive sqrt / sign toggle | `{path} percent composes with square root and trailing-decimal editing` |
+| Pending operator × order of legacy +/- and % → two toggles cancel | `pending {operator} with {% then +/- or +/- then %} uses the signed percent entry` (`tests/calculator.test.js`) |
+| Recognized aliases → focus corresponding button | `every mapped key focuses its corresponding button` |
+| Markup → exactly one % button with truthful accessible name | `percent has one button labelled with its sign-toggle action` |
+
+Tests were exercised against the original implementation before adopting the
+sign-toggle implementation: the updated percent expectations failed as expected.
+The expanded sweep also proved that the old accessible name, “Percent”, no
+longer described the action; the minimal regression fix renames it “Toggle sign”.
+No other calculator behavior changes were needed beyond the requested feature.
+
+Validation: `node --test`: **313 tests pass**, no dependencies added.
