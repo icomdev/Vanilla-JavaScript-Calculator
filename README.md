@@ -24,7 +24,7 @@ Open `index.html` in a browser to use the calculator.
 | `=` | Shows the result; press again to repeat the last operator and operand on the displayed value (e.g. `5 + 3 = =` gives `11`). |
 | `AC` | Clears both numbers, the selected operator, and the remembered operation for repeated equals. Hold for 700 ms to also clear memory. |
 | `DEL` | Removes the last character of the current number. |
-| `⌫` | Removes the last character of the current entry; a single digit resets it to `0`. |
+| `⌫` | Deletes the last entry character to blank; empty entries do nothing. Results reset to `0`, keeping pending operations. |
 | `+/-` | Toggles the sign of the current entry (inactive right after `=` until a new entry starts). |
 | `M+` | Adds the current entry to memory. |
 | `MR` | Recalls the memory value into the current entry. |
@@ -47,7 +47,7 @@ Escape provides entry clearing, while Shift+Escape provides a full reset:
 | `Escape` | Clear only the current entry; keep the pending operation and memory |
 | `Shift+Escape` | Full reset, including memory |
 | `c` or `C` | AC: clear the calculation and history, preserving memory; hold for 700 ms to also clear memory (Shift not required) |
-| `Backspace` | Delete the last character (DEL) |
+| `Backspace` | Delete the last entry character (⌫); empty is unchanged, results reset to `0` |
 
 Keyboard shortcuts focus the matching on-screen button with a visible focus ring.
 Tab navigation also shows the ring; pointer clicks do not. Escape clears an error
@@ -60,8 +60,8 @@ into an immediate memory reset.
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
 Shift is allowed (for example, to type `+` or `%`); `Shift+Escape` performs the
 full reset listed above. Text fields, editable content, and IME composition are
-left alone. There are no dedicated shortcuts for memory, sign toggle, or
-the separate `⌫` button: `Backspace` invokes `DEL`.
+left alone. There are no dedicated shortcuts for memory or the `+/-` sign toggle.
+`Backspace` invokes `⌫`; the separate `DEL` button keeps its existing behavior.
 
 ## Troubleshooting
 
@@ -102,7 +102,7 @@ two columns. This sketch reflects the actual HTML/CSS, not a proposed redesign:
 +--------+--------+--------+--------+
 |   M+   |   MR   |   MC   |   %    |
 +--------+--------+--------+--------+
-|   AC   |  DEL   |  <-    |  +/-   |
+|   AC   |  DEL   |  +/-   |   √    |
 +--------+--------+--------+--------+
 |   /    |   1    |   2    |   3    |
 +--------+--------+--------+--------+
@@ -110,7 +110,7 @@ two columns. This sketch reflects the actual HTML/CSS, not a proposed redesign:
 +--------+--------+--------+--------+
 |   +    |   7    |   8    |   9    |
 +--------+--------+--------+--------+
-|   -    |   .    |   0    |        |
+|   -    |   .    |   0    |   <-   |
 +--------+--------+--------+--------+
 |        =        |                |
 +-----------------+----------------+

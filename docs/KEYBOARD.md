@@ -18,15 +18,16 @@ there is no text field to select first. Keyboard and pointer input can be mixed.
 | `Enter` or `=` | Calculate. With a completed calculation, repeat the last operator and right operand (for example, `5 + 3 = =` gives `11`). Incomplete operands do not compute. |
 | `Escape` | Clear the current entry only; see the clear comparison below. |
 | `Shift+Escape` | Reset the whole calculation, history, and memory. |
-| `Backspace` | Invoke **DEL**, removing the last character of the current entry. A single digit becomes blank; a remaining lone minus sign is also removed. On an error, clear the calculation (memory is kept). |
+| `Backspace` | Invoke **⌫**, removing the final entry character (and a remaining lone minus). Empty entries are unchanged, including errors with an empty entry. Results reset to `0` without losing pending operations, history, memory, or repeat-equals state. |
 
 Selecting another operator after entering both operands computes the pending
 operation first: `2 + 3 * 4 =` gives `20`, not `14`. With an empty right operand,
 `+`, `*`, and `/` replace the pending operator; `-` starts a signed operand.
 
-**Backspace is not the separate `⌫` button.** That button leaves `0` when deleting
-a single digit; the keyboard shortcut uses DEL instead. There are no dedicated
-shortcuts for `⌫`, sign toggle (`+/-`), or memory (`M+`, `MR`, `MC`).
+**Backspace and `⌫` share one click handler.** Deleting a final digit leaves a
+blank entry; a displayed result resets to `0` and retains result mode, so the
+next digit starts fresh. The separate DEL button retains its legacy behavior.
+There are no dedicated shortcuts for sign toggle (`+/-`) or memory (`M+`, `MR`, `MC`).
 
 ## Entry clear versus full reset
 

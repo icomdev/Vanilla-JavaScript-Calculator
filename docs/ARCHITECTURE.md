@@ -43,11 +43,11 @@ Buttons follow HTML order, not a separate JavaScript layout definition:
 | M      history / previous / entry |
 +--------+--------+--------+--------+
 |   M+   |   MR   |   MC   |   %    |
-|   AC   |  DEL   |   <-   |  +/-   |
+|   AC   |  DEL   |  +/-   |   √    |
 |   /    |   1    |   2    |   3    |
 |   *    |   4    |   5    |   6    |
 |   +    |   7    |   8    |   9    |
-|   -    |   .    |   0    |        |
+|   -    |   .    |   0    |   <-   |
 +--------+--------+--------+--------+
 |        =        |                 |
 +-----------------+-----------------+
@@ -86,7 +86,7 @@ keydown      -> key-to-button map -> focus + click -> same path
 | --- | --- |
 | `[data-number]`, `[data-operation]` click listeners | Pass button text to `appendNumber()` or `chooseOperation()`. |
 | Equals and other action buttons | Call the matching method, then `updateDisplay()`; equals calls `compute(true)`. |
-| Document `keydown` | Maps digits, `.`, operators (`/` aliases `÷`), `%`, `=`/Enter, and Backspace (to DEL). Recognized keys prevent default and focus the mapped button before dispatch. Ctrl/Meta/Alt combinations and unmapped keys are ignored. |
+| Document `keydown` | Maps digits, `.`, operators (`/` aliases `÷`), `%`, `=`/Enter, and Backspace (to ⌫). Recognized keys prevent default and focus the mapped button before dispatch. Ctrl/Meta/Alt combinations and unmapped keys are ignored. |
 | Escape / Shift+Escape | Focus AC but bypass its click handler: call `clearEntry()` / `fullClear()`, then render. A normal AC click calls `clear()`. |
 | Primary AC `pointerdown` | Starts a 700 ms timer for `fullClear()` and rendering. AC `pointerleave`, document `pointerup`, or document `pointercancel` cancels a pending hold. |
 
