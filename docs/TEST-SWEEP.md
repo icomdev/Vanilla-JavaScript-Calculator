@@ -211,3 +211,38 @@ The implementation adds only the requested aliases and shares AC's existing
 hold timer; no unrelated behavior fixes or dependencies were needed.
 
 Validation: `node --test` — **383 pass, 0 fail**.
+
+## Concise live announcements (#99)
+
+`tests/aria.test.js` runs the real script/markup with a lightweight DOM stub.
+It records every live-region text write (not just final text) to prove duplicate
+suppression. `{state}`, `{action}`, and `{trigger}` expand to independently named
+tests. No dependencies or browser are needed for these DOM contracts.
+
+| Entry state × action → exit/announcement | Named test(s) |
+| --- | --- |
+| Markup → exactly one polite, atomic status outside visual output | `one dedicated status announces updates politely and atomically` |
+| Pending divide by zero × equals / chained operator → error; no-op M+ / sign / sqrt / rerender → no duplicate; recovery → error again | `error via {equals/chaining} is announced once through no-op actions and rerenders` |
+| Fresh / entry / result / pending / error × AC / Escape / Shift+Escape → “Cleared”; repeat/rerender → no duplicate; new entry → clear announces again | `{fresh/entry/result/pending/error} then {AC/Escape/Shift+Escape} announces cleared once and permits a later clear` (15 cells; pending-state tests also verify Escape preserves the operator) |
+| Decimal entry → M+ twice → accumulated value; MR twice / MC twice / rerender → deduplicated action feedback; cleared memory → MR zero | `memory announcements report accumulated stored value, recall and clear without duplicate writes` |
+| Empty / unfinished / non-finite / overflowing entry → M+ → no false store announcement | `M+ ignores {empty/unfinished/non-finite/overflow} without claiming a store` |
+| Active error → MR → recovered entry; pending operator → MR → equals | `memory recall recovers an error and preserves a pending operation` |
+| Fresh → entry → operator → right entry → result → rerender | `ordinary entries, pending operands and results remain announced without history replay` |
+| Stored memory + pending entry → held AC → release click → cleared calculation/memory, no duplicate | `held AC clears calculation and memory with one cleared announcement even after release click` |
+| Stored memory × AC / Escape / Shift+Escape → cleared → MR preserves / resets memory as before | `{AC/Escape/Shift+Escape} announces cleared while retaining its existing memory semantics` |
+| Zero → repeated M+ → same stored state; negative grouped decimal → M+ / MR → formatted feedback | `zero stores deduplicate and memory feedback uses formatted signed values` |
+
+Tests first: the initial matrix ran against the original code with **21 failures**
+(7 passing static/no-op cases). The concrete accessibility defects were silent
+empty clears and memory actions that only changed an indicator or left the display
+unchanged. The minimal fix introduces one visually hidden live status rather than
+announcing the entire output/history on every render. It announces errors, normal
+entry/pending/result text, “Cleared”, “Memory stored: {total}”, “Memory recalled:
+{value}”, and “Memory cleared”. Identical consecutive announcement text is never
+rewritten; a later transition away and back can announce it again. Ignored memory
+adds do not claim success. The existing memory markup contract was updated to
+point at this single status. Arithmetic, history, and clear/memory semantics are
+unchanged. Screen-reader speech itself is not simulated by the DOM tests.
+
+Validation: `node --test tests/aria.test.js` — **33 pass, 0 fail**;
+`node --test` — **388 pass, 0 fail**.

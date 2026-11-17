@@ -12,7 +12,7 @@
 </head>
 <body>
   <div class="calculator-grid" role="group" aria-label="Calculator">
-    <div class="output" aria-live="polite" aria-atomic="true">
+    <div class="output">
       <span data-memory-indicator class="memory-indicator" role="img" aria-label="Memory state" title="Memory contains a value" hidden>● M</span>
       <div data-copy-panel class="history-panel">
         <div data-history class="history" role="group" aria-label="History"></div>
@@ -21,6 +21,7 @@
       <div data-previous-operand class="previous-operand"></div>
       <div data-current-operand class="current-operand"></div>
     </div>
+    <div data-announcements class="announcements" aria-live="polite" aria-atomic="true"></div>
     <button data-memory-add aria-label="Add to memory">M+</button>
     <button data-memory-recall aria-label="Recall memory">MR</button>
     <button data-memory-clear aria-label="Clear memory">MC</button>
