@@ -187,3 +187,27 @@ they do not claim to verify operating-system clipboard permissions in a browser.
 
 Validation: `node --test tests/history.test.cjs` — **14 pass, 0 fail**;
 `node --test` — **370 pass, 0 fail**. `git diff --check` passes.
+
+## AC letter alias (#96)
+
+All cells use the real event handlers in `test/keyboard.test.js`, without new
+dependencies. `{alias}` expands to `c without Shift`, `C uppercase`,
+`C without Shift (Caps Lock)`, and `c with Shift`. Short activation means
+keydown followed by keyup before the 700 ms hold fires; it is AC, not Escape's
+entry-only clear. Holding either case clears memory after 700 ms, exactly like
+holding the pointer on AC. Auto-repeat does not reset that deadline.
+
+| Entry state × action → exit state | Named test |
+| --- | --- |
+| Entry / pending operation / result / error × each alias → blank calculation/history, no repeat operation or saved result, memory retained | `{alias} short AC clears {entry/pending operation/result/error} and preserves memory` |
+| Result + memory × each alias held with auto-repeat → blank calculation/history and zero memory | `{alias} long AC alias clears memory after 700 ms` |
+| Press → opposite-case release before deadline → memory retained; next hold → zero memory | `AC alias release cancels its hold and allows a later hold` |
+| Active hold → tab visibility change / focus loss → timer cancelled, memory retained | `{visibilitychange/blur} cancels an AC alias hold` |
+| Both aliases × Ctrl / Meta / Alt / consumed event / IME / editable target → browser-owned, no click or timer | `AC aliases leave browser shortcuts, editable targets and composition untouched` |
+| Both aliases → AC focus and existing Escape tiers unaffected | `every mapped key focuses its corresponding button` (extended), existing Escape tests |
+
+Tests were added first: the missing aliases failed before implementation.
+The implementation adds only the requested aliases and shares AC's existing
+hold timer; no unrelated behavior fixes or dependencies were needed.
+
+Validation: `node --test` — **383 pass, 0 fail**.
