@@ -62,27 +62,27 @@ the separate `⌫` button: `Backspace` invokes `DEL`.
 
 ## Troubleshooting
 
-### Keyboard input in an embedded iframe
+The `keydown` listener belongs to the calculator's document, not the parent page.
+Keys may not reach it until the iframe has focus; clicking the surrounding page
+or browser toolbar moves keyboard input away from the calculator again.
 
-Keyboard events go to the focused document, not automatically to an iframe.
-If calculator shortcuts do nothing, click a calculator button inside the frame
-first: the click focuses the frame and also performs that button’s action.
-Then try typing digits or using Enter/Backspace. Clicking the surrounding page
-moves focus away; click inside the calculator again to resume keyboard input.
-Events from the parent page are not forwarded to the calculator.
+| Symptom | Check / fix |
+| --- | --- |
+| Buttons work, but typing does nothing | Click a calculator button inside the frame, then try `1 + 2 Enter`. The click also activates that button; use AC first if needed. |
+| No response to buttons or keys in a sandboxed frame | Include `allow-scripts` in the iframe's `sandbox` attribute so `script.js` can run. |
+| A browser shortcut still wins | Ctrl/Command/Alt combinations are deliberately ignored; browser/OS-reserved shortcuts cannot be captured reliably by page code. |
 
-If the embed uses `sandbox`, include `allow-scripts` so the calculator can run:
+Use a minimal sandbox for this static calculator; `allow-same-origin` is not required:
 
 ```html
 <iframe src="index.html" title="Calculator" sandbox="allow-scripts"></iframe>
 ```
 
-No `allow-same-origin` permission is needed for basic calculator input.
-Browser/OS-reserved shortcuts cannot reliably be captured by page scripts,
-even with frame focus: examples include Ctrl+L / Command+L (address bar),
-Ctrl+T / Command+T (new tab), and Alt+Tab / Command+Tab (app switching).
-Availability varies by browser/OS; the calculator intentionally ignores all
-Ctrl, Command, and Alt combinations rather than overriding browser shortcuts.
+Clicking inside the frame gives it keyboard focus through normal browser behavior;
+no custom click-to-focus or parent-page key forwarding code is installed. Recognized
+keys then focus their matching buttons. Reserved shortcuts include Ctrl/Command+L
+(address bar), Ctrl/Command+T (new tab), and Ctrl/Command+W (close tab); reservations
+vary by browser/OS. Use the plain keys in [Keyboard](#keyboard).
 
 ## Layout
 
