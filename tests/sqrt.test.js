@@ -75,7 +75,7 @@ for (const clear of ['Escape', 'DEL']) {
     assert.equal(app.history(), '4+5=9')
     app.key('Escape')
     app.press('√')
-    assert.equal(app.display(), '1.7320508075688772')
+    assert.equal(app.display(), '~1.7320508075688772')
   })
 }
 
