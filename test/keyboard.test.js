@@ -85,7 +85,7 @@ test('digits, decimal and deletion use button handlers; Escape clears the entry'
   assert.equal(app.display(), '12.34')
   app.key('Backspace')
   assert.equal(app.display(), '12.3')
-  assert.equal(app.button('DEL').clicks, 1)
+  assert.equal(app.button('⌫').clicks, 1)
   app.key('+')
   app.key('4')
   app.key('Escape')
@@ -230,7 +230,7 @@ test('every mapped key focuses its corresponding button', () => {
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
     ['k', '%'], ['r', '√'], ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
-    ['Backspace', 'DEL'], ['c', 'AC'], ['C', 'AC'], ['Escape', 'AC']
+    ['Backspace', '⌫'], ['c', 'AC'], ['C', 'AC'], ['Escape', 'AC']
   ]) {
     app.key(key)
     assert.equal(app.focused(), app.button(label), key)

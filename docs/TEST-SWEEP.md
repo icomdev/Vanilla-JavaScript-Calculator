@@ -246,3 +246,38 @@ unchanged. Screen-reader speech itself is not simulated by the DOM tests.
 
 Validation: `node --test tests/aria.test.js` — **33 pass, 0 fail**;
 `node --test` — **388 pass, 0 fail**.
+
+## Backspace entry deletion (#95)
+
+`tests/backspace.test.js` runs the real markup and event handlers in a minimal
+DOM under `node --test`. `{path}` expands to `button` and `keyboard`. The
+existing ⌫ button is reused (not duplicated), moved immediately after 0, and
+Backspace now routes to it instead of DEL. Entry deletion removes the final
+character, including decimal points, and drops a leftover lone minus.
+
+| Entry state × action → exit state | Named test |
+| --- | --- |
+| Fresh / AC / entry-clear / empty pending operator × delete twice → unchanged blank, next digit starts normally | `{path} backspace on {fresh/AC cleared/entry cleared/pending +/pending -/pending */pending ÷} empty entry is a no-op` |
+| Grouped integer / decimal / trailing decimal / negative / final signed digit / signed zero / zero / lone sign × delete → shortened entry or blank | `{path} backspace edits {12345/12.50/12./-12/-1/-0/0/-} without display formatting leaking into entry` |
+| Fraction × repeated delete → blank → decimal entry | `{path} backspace deletes digit by digit to empty and permits a fresh decimal` |
+| Entered right operand × all operators × delete to blank → replace operand → equals | `{path} backspace preserves pending {+/-/*/÷} through right-entry deletion and replacement` |
+| Positive / negative / zero / fractional / saved square-root result × delete twice → zero; history/memory preserved, digit starts fresh | `{path} backspace resets {positive/negative/zero/fraction/square root} result to zero rather than truncating` |
+| Saved result + pending operator + empty-entry sqrt × delete → zero, pending operator kept → digit/equals | `{path} backspace resets a result without losing an independently pending operation` |
+| Result × delete → repeat equals; saved sqrt result × delete/entry-clear → sqrt | `{path} backspace preserves repeated equals and saved square-root result` |
+| Recalled memory + pending operation × delete → shortened entry, memory unchanged | `{path} backspace edits recalled memory without changing memory or pending state` |
+| Divide-by-zero error with empty entry × delete → unchanged error → digit recovery | `{path} backspace leaves an error with an empty entry unchanged` |
+| Ordinary / repeated / Shift keydown → one click, matching focus, prevent default | `Backspace focuses and clicks the backspace button once per keydown, including repeat` |
+| Ctrl / Meta / Alt / composition / handled event / editable / input / textarea / select → browser-owned | `Backspace leaves browser shortcuts, editing, composition and handled events alone` |
+| Markup → one accessible ⌫ immediately after 0 | `backspace has one labelled button immediately next to zero` |
+
+Tests were written before implementation. Baseline: **359 pass**. The first
+runnable new suite exposed the old single-digit-to-zero behavior, result
+truncation, keyboard-to-DEL routing, and button placement. The minimal fixes
+are confined to `backspace()`, its keyboard mapping, and moving the existing
+button; DEL and square-root behavior are unchanged. Results deliberately keep
+result mode and saved repeat/sqrt state: deletion resets the display, not the
+calculation. No dependencies or browser are needed.
+
+Validation: `node --test tests/backspace.test.js` — **61 pass, 0 fail**;
+`node --test` — **420 pass, 0 fail**. Existing keyboard routing/focus assertions
+were updated to expect ⌫ rather than DEL.

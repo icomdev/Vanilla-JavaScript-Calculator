@@ -72,7 +72,7 @@ button's click handler, keeping arithmetic behavior aligned with pointer input:
 | `+`, `-`, `*`, `/` or `÷` | Select an operator (`/` maps to Divide) |
 | `%` | Percent |
 | `Enter` or `=` | Equals |
-| `Backspace` | DEL (Delete last digit), not the separate `⌫` button |
+| `Backspace` | ⌫ (Backspace): delete entry character; empty no-op; result resets to zero |
 | `Escape` | Clear the current entry, preserving the pending operation and memory |
 | `Shift+Escape` | Full reset, including memory |
 
@@ -81,8 +81,8 @@ call entry-clear or full-reset behavior directly. A short AC activation clears
 the calculation while preserving memory; holding AC with a pointer for 700 ms
 also clears memory. Shift+Escape offers a keyboard route to the full reset.
 
-There are no dedicated shortcuts for M+, MR, MC, Negate, or the separate `⌫`
-button; reach them with Tab and activate with Space. Ctrl, Command (Meta), and
+There are no dedicated shortcuts for M+, MR, MC, or Negate;
+reach them with Tab and activate with Space. Ctrl, Command (Meta), and
 Alt combinations are left to the browser or operating system. Shift is allowed
 for characters such as `+` and `%`, as well as Shift+Escape. Other keys are
 ignored by the shortcut handler. Screen readers may intercept keys in browsing

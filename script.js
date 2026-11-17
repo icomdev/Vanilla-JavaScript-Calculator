@@ -155,18 +155,18 @@ class Calculator {
   }
 
   /**
-   * Remove one character, replacing a single-character entry with zero.
-   * Unlike delete(), leave empty entries, a lone minus, and negative zero alone.
+   * Remove the final entry character, including a remaining lone minus sign.
+   * Empty entries are unchanged; results reset to zero, retaining result mode.
+   * Preserve pending operations, repeat state, saved result, history, and memory.
    * @returns {void}
    */
   backspace() {
-    const entry = this.currentOperand.toString()
-    if (entry === '' || entry === '-' || entry === '-0') return
-    if (entry.length === 1) {
+    if (this.isResult) {
       this.currentOperand = '0'
       return
     }
-    this.currentOperand = entry.slice(0, -1)
+    this.currentOperand = this.currentOperand.toString().slice(0, -1)
+    if (this.currentOperand === '-') this.currentOperand = ''
   }
 
   /**
@@ -520,7 +520,7 @@ keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
 keyboardButtons.set('c', allClearButton)
 keyboardButtons.set('C', allClearButton)
-keyboardButtons.set('Backspace', deleteButton)
+keyboardButtons.set('Backspace', backspaceButton)
 
 document.addEventListener('keydown', event => {
   // Leave browser/OS shortcuts, composition, and text editing alone.
