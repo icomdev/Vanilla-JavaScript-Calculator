@@ -9,7 +9,7 @@ lightweight DOM stub. Names below use `{…}` for generated test-name variants.
 | Operator → equals → operator, chaining the result | `operator chain {first} → equals → {next} uses the result` (all 16 pairs of `+`, `-`, `*`, `÷`) |
 | Sign toggle mid-entry | `sign toggle mid-entry preserves digits and a trailing decimal` |
 | Sign toggle after equals vs a fresh entry | `sign toggle after equals is inactive until a new number entry` |
-| Percent after a pending operator combined with sign toggle | `pending {operator} with {% then +/- or +/- then %} uses the signed percent entry` (all four operators, both orders; also checks empty pending entries) |
+| Percent after a pending operator combined with sign toggle | `pending {operator} with {% then +/- or +/- then %} toggles the entry twice` (all four operators, both orders; also checks empty pending entries) |
 | M+ with a pending operator, empty operand | `M+ with an empty pending operand leaves memory and the operation unchanged` |
 | M+ with a pending operator, entered operand | `M+ with a pending operator stores only the entry without computing` |
 | MR then immediate operator | `MR then immediate operator uses recalled memory instead of the equals result` |
@@ -51,3 +51,16 @@ the one new key, and its symbolic-name map now includes square root.
 
 Validation: **297 tests pass** (`node --test`), including all **21** square-root
 cases (`node --test tests/sqrt.test.js`). No unrelated behavior fixes were needed.
+
+## Percent sign key (#93)
+
+The original divide-by-100 behavior described above is superseded by #93.
+The existing `%` button now toggles the current entry/result sign. `k` and `%`
+share its click handler, once per keydown, like `r` does for square root.
+Unlike the legacy `+/-` button, `%` also toggles displayed results. Zero,
+empty/unfinished entries, non-finite entries, and errors are unchanged.
+Pending operations, repeat-equals state, history, and memory are preserved.
+Existing percent and cross-feature expectations were updated accordingly.
+`test/keyboard.test.js` checks chained/mixed keyboard and button presses,
+results, focus, browser shortcuts, no-op states, and pending operations.
+Its button stub retains all listeners so duplicate click wiring cannot hide.
