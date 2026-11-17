@@ -179,11 +179,11 @@ test('calculator and display expose a named group and one atomic polite live reg
   const container = elements.find(element => element.getAttribute('class') === 'calculator-grid')
   assert.equal(container.getAttribute('role'), 'group')
   assert.equal(container.getAttribute('aria-label'), 'Calculator')
-  const output = elements.find(element => element.getAttribute('class') === 'output')
-  assert.equal(output.getAttribute('aria-live'), 'polite')
-  assert.equal(output.getAttribute('aria-atomic'), 'true')
-  // History is announced as part of the output, not a second nested live region.
-  assert.deepEqual(elements.filter(element => element.getAttribute('aria-live')), [output])
+  const status = elements.find(element => element.getAttribute('class') === 'announcements')
+  assert.equal(status.getAttribute('aria-live'), 'polite')
+  assert.equal(status.getAttribute('aria-atomic'), 'true')
+  // Only concise status text is live; history remains available for navigation.
+  assert.deepEqual(elements.filter(element => element.getAttribute('aria-live')), [status])
 })
 
 test('every button has a readable name, with explicit names for symbolic controls', () => {

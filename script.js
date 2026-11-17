@@ -7,9 +7,11 @@ class Calculator {
    * @param {HTMLElement} memoryIndicatorElement - Indicator hidden when memory is zero.
    * @param {HTMLElement} historyTextElement - Last recorded expression display.
    * @param {HTMLButtonElement} [historyCopyButton] - Session history copy control.
+   * @param {HTMLElement} announcementElement - Dedicated polite live status.
    * @returns {Calculator} The initialized calculator instance.
    */
-  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton) {
+  constructor(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton, announcementElement) {
+    this.announcementElement = announcementElement
     this.previousOperandTextElement = previousOperandTextElement
     this.currentOperandTextElement = currentOperandTextElement
     this.memoryIndicatorElement = memoryIndicatorElement
@@ -43,6 +45,7 @@ class Calculator {
    * @returns {void}
    */
   clearEntry() {
+    this.pendingAnnouncement = 'Cleared'
     this.currentOperand = ''
     this.isResult = false
     this.errorMessage = ''
@@ -57,6 +60,7 @@ class Calculator {
   fullClear() {
     this.clear()
     this.clearMemory()
+    this.pendingAnnouncement = 'Cleared'
   }
 
   /**
@@ -68,7 +72,10 @@ class Calculator {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
     const total = this.memory + value
-    if (Number.isFinite(total)) this.memory = total
+    if (Number.isFinite(total)) {
+      this.memory = total
+      this.pendingAnnouncement = `Memory stored: ${this.getDisplayNumber(total)}`
+    }
   }
 
   /**
@@ -79,6 +86,7 @@ class Calculator {
   recallMemory() {
     if (this.errorMessage) this.clear()
     this.currentOperand = this.memory.toString()
+    this.pendingAnnouncement = `Memory recalled: ${this.getDisplayNumber(this.memory)}`
   }
 
   /**
@@ -87,6 +95,7 @@ class Calculator {
    */
   clearMemory() {
     this.memory = 0
+    this.pendingAnnouncement = 'Memory cleared'
   }
 
   /**
@@ -315,6 +324,25 @@ class Calculator {
     } else {
       this.previousOperandTextElement.innerText = ''
     }
+
+    // Keep a single live region separate from history/indicator DOM mutations.
+    // Retain action feedback on rerenders and no-ops; only write changed text.
+    const displayState = JSON.stringify([
+      this.errorMessage, this.currentOperand.toString(), this.previousOperand.toString(), this.operation
+    ])
+    if (this.pendingAnnouncement != null) {
+      this.announcement = this.pendingAnnouncement
+    } else if (displayState !== this.announcedDisplayState) {
+      this.announcement = this.errorMessage || [
+        this.previousOperandTextElement.innerText,
+        this.currentOperandTextElement.innerText
+      ].filter(Boolean).join(' ') || 'Cleared'
+    }
+    this.pendingAnnouncement = undefined
+    this.announcedDisplayState = displayState
+    if (this.announcementElement && this.announcementElement.textContent !== this.announcement) {
+      this.announcementElement.textContent = this.announcement
+    }
   }
 }
 
@@ -340,7 +368,8 @@ const historyTextElement = document.querySelector('[data-history]')
 const historyCopyButton = document.querySelector('[data-history-copy]')
 
 // Shared calculator instance used by all input handlers.
-const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton)
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton,
+  document.querySelectorAll('[data-announcements]')?.[0])
 
 // Clipboard API may be absent on file:// or denied by browser permissions.
 // Keep the fallback synchronous so it can still use the click's user activation.
@@ -413,6 +442,7 @@ equalsButton.addEventListener('click', button => {
 
 allClearButton.addEventListener('click', button => {
   calculator.clear()
+  calculator.pendingAnnouncement = 'Cleared'
   calculator.updateDisplay()
 })
 
