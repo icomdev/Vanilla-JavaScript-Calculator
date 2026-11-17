@@ -60,6 +60,30 @@ full reset listed above. Text fields, editable content, and IME composition are
 left alone. There are no dedicated shortcuts for memory, sign toggle, or
 the separate `⌫` button: `Backspace` invokes `DEL`.
 
+## Troubleshooting
+
+The `keydown` listener belongs to the calculator's document, not the parent page.
+Keys may not reach it until the iframe has focus; clicking the surrounding page
+or browser toolbar moves keyboard input away from the calculator again.
+
+| Symptom | Check / fix |
+| --- | --- |
+| Buttons work, but typing does nothing | Click a calculator button inside the frame, then try `1 + 2 Enter`. The click also activates that button; use AC first if needed. |
+| No response to buttons or keys in a sandboxed frame | Include `allow-scripts` in the iframe's `sandbox` attribute so `script.js` can run. |
+| A browser shortcut still wins | Ctrl/Command/Alt combinations are deliberately ignored; browser/OS-reserved shortcuts cannot be captured reliably by page code. |
+
+Use a minimal sandbox for this static calculator; `allow-same-origin` is not required:
+
+```html
+<iframe src="index.html" title="Calculator" sandbox="allow-scripts"></iframe>
+```
+
+Clicking inside the frame gives it keyboard focus through normal browser behavior;
+no custom click-to-focus or parent-page key forwarding code is installed. Recognized
+keys then focus their matching buttons. Reserved shortcuts include Ctrl/Command+L
+(address bar), Ctrl/Command+T (new tab), and Ctrl/Command+W (close tab); reservations
+vary by browser/OS. Use the plain keys in [Keyboard](#keyboard).
+
 ## Layout
 
 The current grid has **4 columns**, not 5 columns × 5 rows. The display spans
