@@ -32,7 +32,7 @@ Open `index.html` in a browser to use the calculator.
 
 The clear button is labeled `AC`, not `C`.
 
-## Quick reference
+## Keyboard
 
 The keyboard uses the same actions as the on-screen buttons:
 
@@ -41,6 +41,7 @@ The keyboard uses the same actions as the on-screen buttons:
 | `0`–`9`, `.` | Enter digits or a decimal point |
 | `+`, `-`, `*`, `/` or `÷` | Add, subtract, multiply, or divide |
 | `%` | Divide the current entry by 100 (same as the percent button) |
+| `r` | Take the square root (same as the √ button) |
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear only the current entry; keep the pending operation and memory |
 | `Shift+Escape` | Full reset, including memory |
@@ -53,9 +54,11 @@ continues to preserve memory; releasing or moving off AC before 700 ms cancels
 the full-reset hold.
 
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
-Shift is allowed (for example, to type `+` or `%`); it does not give Escape a
-different action. There are no dedicated shortcuts for memory, sign toggle, or
-the separate `⌫` button: `Backspace` invokes `DEL`.
+Text fields, editable content, and IME composition are not intercepted.
+Shift is allowed (for example, to type `+` or `%`); `Shift+Escape` performs the
+full reset listed above. There are no dedicated shortcuts for memory, sign toggle, or
+the separate `⌫` button: `Backspace` invokes `DEL`. See the [keyboard guide](docs/KEYBOARD.md) for examples
+and detailed entry and reset behavior.
 
 ## Layout
 

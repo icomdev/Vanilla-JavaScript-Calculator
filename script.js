@@ -422,8 +422,11 @@ keyboardButtons.set('Escape', allClearButton)
 keyboardButtons.set('Backspace', deleteButton)
 
 document.addEventListener('keydown', event => {
-  // Leave browser/OS shortcuts (copy, reload, etc.) alone.
-  if (event.ctrlKey || event.metaKey || event.altKey) return
+  // Leave text editing, IME composition, and browser/OS shortcuts alone.
+  if (event.defaultPrevented || event.isComposing ||
+      event.ctrlKey || event.metaKey || event.altKey) return
+  if (event.target?.isContentEditable ||
+      event.target?.closest?.('input, textarea, select')) return
 
   const button = keyboardButtons.get(event.key)
   if (!button) return

@@ -294,3 +294,59 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
   app.button('MR').click()
   assert.equal(app.display(), '0')
 })
+
+test('keyboard entry, editing and repeated equals match button input', () => {
+  const keyboard = setup()
+  const pointer = setup()
+  for (const [key, label] of [
+    ['.', '.'], ['5', '5'], ['.', '.'], ['Backspace', 'DEL'],
+    ['5', '5'], ['+', '+'], ['1', '1'], ['Enter', '='], ['=', '=']
+  ]) {
+    assert.equal(keyboard.key(key), true)
+    pointer.button(label).click()
+    assert.equal(keyboard.display(), pointer.display(), key)
+    assert.equal(keyboard.previous(), pointer.previous(), key)
+    assert.equal(keyboard.history(), pointer.history(), key)
+    assert.equal(keyboard.focused(), keyboard.button(label), key)
+  }
+  assert.equal(keyboard.display(), '2.5')
+})
+
+test('Backspace uses DEL semantics for single digits, signed entries and errors', () => {
+  const app = setup()
+  app.key('1')
+  app.key('Backspace')
+  assert.equal(app.display(), '')
+  app.key('-')
+  app.key('2')
+  app.key('Backspace')
+  assert.equal(app.display(), '')
+  for (const key of ['1', '/', '0', '=']) app.key(key)
+  app.key('Backspace')
+  assert.equal(app.display(), '')
+  assert.equal(app.previous(), '')
+})
+
+test('text editing, composition and already-handled events are not intercepted', () => {
+  const app = setup()
+  app.key('7')
+  const focused = app.focused()
+  for (const context of [
+    { isComposing: true },
+    { defaultPrevented: true },
+    { target: { isContentEditable: true } },
+    ...['input', 'textarea', 'select'].map(tag => ({ target: {
+      closest(selector) {
+        assert.equal(selector, 'input, textarea, select')
+        return { tagName: tag.toUpperCase() }
+      }
+    } }))
+  ]) {
+    for (const key of ['1', '.', '+', '/', '=', 'Enter', 'Escape', 'Backspace']) {
+      assert.equal(app.key(key, context), false, key)
+      assert.equal(app.display(), '7')
+      assert.equal(app.previous(), '')
+      assert.equal(app.focused(), focused)
+    }
+  }
+})
