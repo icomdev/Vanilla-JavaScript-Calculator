@@ -120,3 +120,40 @@ missing `k` route. This is the requested behavior replacement, not an unrelated
 bug fix. Existing percent expectations and the accessible label were updated.
 Validation: `node --test` — **359 pass, 0 fail**, including **46 new matrix tests**.
 No dependencies or browser required.
+
+## Memory active badge (#101)
+
+The current default branch already maintains a nonzero-memory indicator and
+updates it on M+, MR, MC, short AC, and long AC. The sweep therefore reuses that
+single indicator rather than adding a second state flag or changing memory
+semantics in `script.js`. The requested UI refinement adds a green dot to the `M`
+badge and positions it at the bottom-left of the output, directly above the
+memory controls. It remains hidden for zero (including cancellation to zero),
+and visible for either sign of nonzero memory. Its existing accessible name and
+role are preserved; the dot is not the only signal.
+
+All new tests live in `tests/memory.test.cjs`. The harness now dispatches real
+pointer handlers with deterministic timers (no sleeps or dependencies).
+`{value}` expands to `7` and `-7`; `{action}` expands to `memory-recall`,
+`memory-clear`, `all-clear`, and `long AC`.
+
+| Entry state × action → exit state | Named test |
+| --- | --- |
+| Initial document → hidden, labelled dot/M badge immediately above memory controls | `memory badge sits above the memory row and has a visible active marker` (also checks the positioning rule) |
+| Zero → M+ positive/negative → active; short AC/new entry → still active | `active badge after storing {value} then {action} reflects memory, not entry` (all eight variants) |
+| Nonzero × MR → recalled value, still active | `active badge after storing {value} then memory-recall reflects memory, not entry` |
+| Nonzero × MC → current entry unchanged, inactive; MR → zero | `active badge after storing {value} then memory-clear reflects memory, not entry` |
+| Nonzero × short AC → entry cleared, still active; MR → saved value | `active badge after storing {value} then all-clear reflects memory, not entry` |
+| Nonzero × AC hold at 699 ms → active; at 700 ms → inactive; release/click/MR → still inactive, zero recalled | `active badge after storing {value} then long AC reflects memory, not entry` |
+| Active × hold cancelled by release/cancel/leave → active; subsequent completed hold → inactive | `cancelled AC hold via {pointerup/pointercancel/pointerleave} keeps the badge active and allows a later full clear` |
+| Zero × MR/MC/long AC → inactive; subsequent M+ → active | `zero memory stays inactive through recall, MC and long AC; storing again reactivates it` |
+| Zero addition / signed cancellation → inactive; negative total → active | Existing `indicator is hidden for zero and cancellation, visible for negative memory` |
+| Invalid M+ / arithmetic error → memory preserved | Existing `empty, incomplete and non-finite entries do not poison memory` |
+
+Tests first: **22 passed, 1 failed** before the UI refinement (the old `M`
+marker did not match the requested dot badge). All runtime transitions already
+passed; no production JavaScript bug or need for a behavior change was found.
+Validation after the markup/style refinement: `node --test tests/memory.test.cjs`
+— **26 pass, 0 fail**; `node --test` — **375 pass, 0 fail** (16 tests over
+the original default branch, including the three existing PR regressions).
+The positioning check is a static CSS contract, not a browser screenshot test.

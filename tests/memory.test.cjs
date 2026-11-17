@@ -18,8 +18,12 @@ function setup() {
     hidden: /\bhidden\b/.test(attributes),
     addEventListener(event, handler) { this[event] = handler }
   }))
+  const listeners = new Map()
+  const timers = new Map()
+  let now = 0
+  let nextTimer = 0
   const document = {
-  addEventListener() {},
+    addEventListener(event, handler) { listeners.set(event, handler) },
     querySelectorAll(selector) {
       return elements.filter(element => element.attributes.includes(selector.slice(1, -1)))
     },
@@ -29,9 +33,31 @@ function setup() {
       return element
     }
   }
-  vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), { document })
+  vm.runInNewContext(readFileSync(path.join(__dirname, '../script.js'), 'utf8'), {
+    document,
+    setTimeout(callback, delay) {
+      const id = ++nextTimer
+      timers.set(id, { callback, at: now + delay })
+      return id
+    },
+    clearTimeout(id) { timers.delete(id) }
+  })
   return {
     elements,
+    pointer(event) {
+      if (event === 'pointerdown') document.querySelector('[data-all-clear]').pointerdown({ button: 0, isPrimary: true })
+      else if (event === 'pointerleave') document.querySelector('[data-all-clear]').pointerleave()
+      else listeners.get(event)()
+    },
+    advance(ms) {
+      now += ms
+      for (const [id, timer] of timers) {
+        if (timer.at <= now) {
+          timers.delete(id)
+          timer.callback()
+        }
+      }
+    },
     element(attribute) { return document.querySelector(`[data-${attribute}]`) },
     click(attribute) { document.querySelector(`[data-${attribute}]`).click() },
     type(value) {
@@ -209,3 +235,126 @@ test('memory and history labels survive calculations, recall, and clear', () => 
   assert.equal(memory.hidden, true)
   assertLabels()
 })
+
+// #101: memory state × recall/clear/hold transitions, using the real UI handlers.
+test('memory badge sits above the memory row and has a visible active marker', () => {
+  const app = setup()
+  const badge = app.element('memory-indicator')
+  assert.equal(badge.innerText, '● M')
+  assert.equal(badge.hidden, true)
+  const css = readFileSync(path.join(__dirname, '../styles.css'), 'utf8')
+  const rule = css.match(/\.output \.memory-indicator\s*\{([^}]+)\}/)[1]
+  assert.match(rule, /bottom:\s*10px/)
+  assert.match(rule, /left:\s*10px/)
+  assert.doesNotMatch(rule, /top:/)
+})
+
+for (const value of ['7', '-7']) {
+  for (const action of ['memory-recall', 'memory-clear', 'all-clear', 'long AC']) {
+    test(`active badge after storing ${value} then ${action} reflects memory, not entry`, () => {
+      const app = setup()
+      if (value.startsWith('-')) app.operation('-')
+      app.type('7')
+      app.click('memory-add')
+      assert.equal(app.memoryHidden(), false)
+      app.click('all-clear')
+      app.type('99')
+      assert.equal(app.memoryHidden(), false)
+      if (action === 'long AC') {
+        app.pointer('pointerdown')
+        app.advance(699)
+        assert.equal(app.memoryHidden(), false)
+        assert.equal(app.display(), '99')
+        app.advance(1)
+        assert.equal(app.memoryHidden(), true)
+        assert.equal(app.display(), '')
+        app.pointer('pointerup')
+        app.click('all-clear') // Browsers dispatch click after a completed hold.
+      } else {
+        app.click(action)
+        assert.equal(app.display(), action === 'memory-recall' ? value : action === 'all-clear' ? '' : '99')
+      }
+      const cleared = action === 'memory-clear' || action === 'long AC'
+      assert.equal(app.memoryHidden(), cleared)
+      app.click('memory-recall')
+      assert.equal(app.display(), cleared ? '0' : value)
+      assert.equal(app.memoryHidden(), cleared)
+    })
+  }
+}
+
+for (const cancel of ['pointerup', 'pointercancel', 'pointerleave']) {
+  test(`cancelled AC hold via ${cancel} keeps the badge active and allows a later full clear`, () => {
+    const app = setup()
+    app.type('5')
+    app.click('memory-add')
+    app.pointer('pointerdown')
+    app.advance(699)
+    app.pointer(cancel)
+    app.advance(1)
+    app.click('all-clear')
+    assert.equal(app.memoryHidden(), false)
+    app.click('memory-recall')
+    assert.equal(app.display(), '5')
+    app.pointer('pointerdown')
+    app.advance(700)
+    assert.equal(app.memoryHidden(), true)
+    app.click('memory-recall')
+    assert.equal(app.display(), '0')
+  })
+}
+
+test('zero memory stays inactive through recall, MC and long AC; storing again reactivates it', () => {
+  const app = setup()
+  for (const action of ['memory-recall', 'memory-clear']) {
+    app.click(action)
+    assert.equal(app.memoryHidden(), true)
+  }
+  app.pointer('pointerdown')
+  app.advance(700)
+  assert.equal(app.memoryHidden(), true)
+  app.type('3')
+  app.click('memory-add')
+  assert.equal(app.memoryHidden(), false)
+})
+
+test('memory badge starts off and has a readable description', () => {
+  const app = setup()
+  const badge = app.element('memory-indicator')
+  assert.match(badge.innerText, /●/)
+  assert.equal(badge.hidden, true)
+  assert.equal(badge.getAttribute('title'), 'Memory contains a value')
+})
+
+test('holding AC for 700 ms clears memory and its indicator', () => {
+  const app = setup()
+  app.type('42')
+  app.click('memory-add')
+  assert.equal(app.memoryHidden(), false)
+  app.element('all-clear').pointerdown({ button: 0, isPrimary: true })
+  app.advance(699)
+  assert.equal(app.memoryHidden(), false)
+  app.advance(1)
+  assert.equal(app.memoryHidden(), true)
+  assert.equal(app.display(), '')
+  app.pointer('pointerup')
+  app.click('all-clear')
+  app.click('memory-recall')
+  assert.equal(app.display(), '0')
+  assert.equal(app.memoryHidden(), true)
+})
+
+test('releasing AC before the hold threshold preserves the indicator', () => {
+  const app = setup()
+  app.type('7')
+  app.click('memory-add')
+  app.element('all-clear').pointerdown({ button: 0, isPrimary: true })
+  app.advance(699)
+  app.pointer('pointerup')
+  app.click('all-clear')
+  app.advance(1)
+  app.click('memory-recall')
+  assert.equal(app.display(), '7')
+  assert.equal(app.memoryHidden(), false)
+})
+

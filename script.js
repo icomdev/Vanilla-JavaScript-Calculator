@@ -292,6 +292,7 @@ class Calculator {
    * @returns {void}
    */
   updateDisplay() {
+    // Keep the badge in sync after every action, including recall and full clear.
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
     this.currentOperandTextElement.innerText =
