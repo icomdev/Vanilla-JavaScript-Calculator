@@ -60,6 +60,30 @@ full reset listed above. Text fields, editable content, and IME composition are
 left alone. There are no dedicated shortcuts for memory, sign toggle, or
 the separate `⌫` button: `Backspace` invokes `DEL`.
 
+## Troubleshooting
+
+### Keyboard input in an embedded iframe
+
+Keyboard events go to the focused document, not automatically to an iframe.
+If calculator shortcuts do nothing, click a calculator button inside the frame
+first: the click focuses the frame and also performs that button’s action.
+Then try typing digits or using Enter/Backspace. Clicking the surrounding page
+moves focus away; click inside the calculator again to resume keyboard input.
+Events from the parent page are not forwarded to the calculator.
+
+If the embed uses `sandbox`, include `allow-scripts` so the calculator can run:
+
+```html
+<iframe src="index.html" title="Calculator" sandbox="allow-scripts"></iframe>
+```
+
+No `allow-same-origin` permission is needed for basic calculator input.
+Browser/OS-reserved shortcuts cannot reliably be captured by page scripts,
+even with frame focus: examples include Ctrl+L / Command+L (address bar),
+Ctrl+T / Command+T (new tab), and Alt+Tab / Command+Tab (app switching).
+Availability varies by browser/OS; the calculator intentionally ignores all
+Ctrl, Command, and Alt combinations rather than overriding browser shortcuts.
+
 ## Layout
 
 The current grid has **4 columns**, not 5 columns × 5 rows. The display spans
