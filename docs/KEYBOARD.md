@@ -14,6 +14,7 @@ there is no text field to select first. Keyboard and pointer input can be mixed.
 | `*` | Select multiplication. |
 | `/` or `÷` | Select division (the `÷` button). Dividing by zero displays `Cannot divide by zero`. |
 | `%` | Divide the current entry by 100; repeat to divide again. Keep the pending operator. Empty, invalid, or non-finite entries are unchanged. This is not a percentage of the previous operand: `200 + 10 % =` gives `200.1`. |
+| `r` | Take the square root of the current entry, or the last computed/square-root result if the entry is blank. Keep pending operations, history, memory, and repeat-equals state. Negative or invalid entries and active errors are unchanged. AC/Shift+Escape forget the saved result; Escape/DEL do not. |
 | `Enter` or `=` | Calculate. With a completed calculation, repeat the last operator and right operand (for example, `5 + 3 = =` gives `11`). Incomplete operands do not compute. |
 | `Escape` | Clear the current entry only; see the clear comparison below. |
 | `Shift+Escape` | Reset the whole calculation, history, and memory. |

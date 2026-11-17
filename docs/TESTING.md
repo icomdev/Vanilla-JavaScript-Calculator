@@ -35,6 +35,7 @@ and assume all behavior is covered. The `.js` and `.cjs` suites use CommonJS
 | File | Coverage |
 | --- | --- |
 | `test/keyboard.test.js` | Keyboard/button parity for digits, decimals, arithmetic, deletion, and percent; mixed pointer/keyboard input; ignored keys and browser shortcuts; focus targets; Escape entry clearing versus Shift+Escape full reset; long AC holds, cancellation, and short-click memory preservation. |
+| `tests/sqrt.test.js` | Square-root button and `r` shortcut, entry/result precedence, cleared-entry fallback, pending operators, resets, memory, repeat-equals, and invalid/error states. |
 | `tests/calculator.test.js` | Arithmetic and chaining, division-by-zero messages and recovery, repeated equals, operator replacement, unary minus, percent, and cross-feature interactions with sign toggle, memory, editing, and fresh entries. |
 | `tests/decimal.test.js` | Leading and duplicate decimal guards, decimal operands for all four operators, editing results, chaining, deleting decimals, and resetting the guard with AC. |
 | `tests/history.test.js` | Markup-backed click-handler checks for recording/replacing completed expressions, preserving history during editing/chaining or incomplete/repeated equals, and clearing history and operands with AC. |

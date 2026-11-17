@@ -24,6 +24,7 @@ class Calculator {
    */
   clear() {
     this.history = ''
+    this.lastResult = undefined
     this.currentOperand = ''
     this.previousOperand = ''
     this.operation = undefined
@@ -108,6 +109,22 @@ class Calculator {
     const value = parseFloat(this.currentOperand)
     if (!Number.isFinite(value)) return
     this.currentOperand = (value / 100).toString()
+  }
+
+  /**
+   * Take the square root of the current entry, or last result if entry is empty.
+   * Preserve pending operations, history, memory, and repeat-equals state.
+   * Ignore errors, invalid/non-finite values, and negative entries.
+   * @returns {void}
+   */
+  sqrt() {
+    if (this.errorMessage) return
+    const empty = this.currentOperand === ''
+    const value = empty ? this.lastResult : parseFloat(this.currentOperand)
+    if (!Number.isFinite(value) || value < 0) return
+    this.currentOperand = Math.sqrt(value).toString()
+    this.lastResult = Number(this.currentOperand)
+    if (empty) this.isResult = true
   }
 
   /**
@@ -236,6 +253,7 @@ class Calculator {
       this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
     }
     this.currentOperand = computation
+    this.lastResult = computation
     this.operation = undefined
     this.previousOperand = ''
     this.isResult = true
@@ -289,6 +307,7 @@ class Calculator {
 const numberButtons = document.querySelectorAll('[data-number]')
 const operationButtons = document.querySelectorAll('[data-operation]')
 const percentButton = document.querySelector('[data-percent]')
+const sqrtButton = document.querySelector('[data-sqrt]')
 const equalsButton = document.querySelector('[data-equals]')
 const deleteButton = document.querySelector('[data-delete]')
 const backspaceButton = document.querySelector('[data-backspace]')
@@ -367,6 +386,12 @@ signToggleButton.addEventListener('click', () => {
   calculator.updateDisplay()
 })
 
+// Unary square-root button event, also invoked by its keyboard alias.
+sqrtButton?.addEventListener('click', () => {
+  calculator.sqrt()
+  calculator.updateDisplay()
+})
+
 // Memory button events: add, recall, and clear.
 memoryAddButton.addEventListener('click', () => {
   calculator.addToMemory()
@@ -390,6 +415,7 @@ const keyboardButtons = new Map(
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
 keyboardButtons.set('%', percentButton)
+keyboardButtons.set('r', sqrtButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)
 keyboardButtons.set('Escape', allClearButton)
