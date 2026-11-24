@@ -113,16 +113,15 @@ class Calculator {
   }
 
   /**
-   * Toggle the sign of a finite current entry or displayed result.
-   * Preserve pending state and digits; ignore errors, zero, and invalid entries.
+   * Divide the current entry or result by 100.
+   * Preserve pending state; ignore errors and invalid or empty entries.
    * @returns {void}
    */
   percent() {
-    const value = parseFloat(this.currentOperand)
+    if (this.errorMessage || this.currentOperand === '') return
+    const value = Number(this.currentOperand)
     if (!Number.isFinite(value)) return
-    if (this.errorMessage || value === 0) return
-    const entry = this.currentOperand.toString()
-    this.currentOperand = entry.startsWith('-') ? entry.slice(1) : '-' + entry
+    this.currentOperand = (value / 100).toString()
     if (this.isResult) this.lastResult = Number(this.currentOperand)
   }
 
@@ -308,6 +307,7 @@ class Calculator {
     // Keep the badge in sync after every action, including recall and full clear.
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
+    if (percentButton) percentButton.disabled = this.errorMessage !== '' || this.currentOperand === '' || !Number.isFinite(Number(this.currentOperand))
     if (this.historyCopyButton) {
       this.historyCopyButton.disabled = this.sessionHistory.length === 0
       if (this.historyCopyButton.disabled) {
@@ -513,7 +513,7 @@ const keyboardButtons = new Map(
 )
 keyboardButtons.set('/', keyboardButtons.get('÷'))
 keyboardButtons.set('%', percentButton)
-keyboardButtons.set('k', percentButton)
+keyboardButtons.set('k', signToggleButton)
 keyboardButtons.set('r', sqrtButton)
 keyboardButtons.set('=', equalsButton)
 keyboardButtons.set('Enter', equalsButton)

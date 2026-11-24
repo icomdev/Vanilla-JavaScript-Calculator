@@ -41,7 +41,8 @@ Escape provides entry clearing, while Shift+Escape provides a full reset:
 | --- | --- |
 | `0`–`9`, `.` | Enter digits or a decimal point |
 | `+`, `-`, `*`, `/` or `÷` | Add, subtract, multiply, or divide |
-| `k` or `%` | Toggle the current entry/result sign once (same as `%`); repeated presses keep toggling |
+| `%` | Divide the current entry/result by 100; disabled for empty or error displays |
+| `k` | Negate the current entry (same as `+/-`) |
 | `r` | Take the square root (same as `√`); see the [keyboard guide](docs/KEYBOARD.md) |
 | `Enter` or `=` | Calculate the result |
 | `Escape` | Clear only the current entry; keep the pending operation and memory |

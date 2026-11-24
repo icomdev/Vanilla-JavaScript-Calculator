@@ -11,7 +11,8 @@ Open `index.html`; keyboard and on-screen button input can be mixed.
 | `.` | Enter a decimal point | Empty entry becomes `0.`; extra points are ignored. Extends a result instead of replacing it; clears an error first. |
 | `+`, `*`, `/` or `÷` | Add, multiply, divide | Use a displayed result as the left operand. With an empty right entry, replace the pending operator; with no left operand, do nothing. On error, clear calculation without selecting an operator. |
 | `-` | Subtract / start a negative entry | An empty entry or lone minus becomes `-`, including after a pending operator. On error, clear calculation only. |
-| `%` or `k` | Toggle entry/result sign | Each press toggles again; **not** division by 100. Empty, invalid, non-finite, zero, and error entries stay unchanged. Pending operation and repeat-equals state are kept. |
+| `%` | Percent | Divide the entry or result by 100 on each press; disabled when empty or in error. Pending operation stays intact. |
+| `k` | Negate | Toggle entry sign via `+/-`. |
 | `r` | Square root (`√`) | Use current entry, or saved result if blank. No change for negative/invalid/non-finite values or errors. Keeps pending operation and repeat-equals state; result mode stays active on results. |
 | `Enter` or `=` | Calculate / repeat equals | Incomplete operands do nothing. Repeat the last operator/right operand on the displayed value (`5 + 3 = =` → `11`). On error, clear calculation. |
 | `Backspace` | Delete via **DEL** | Empty stays blank; a single digit becomes blank; a remaining lone minus is removed. Edits results without leaving result mode. On error, clear calculation, keeping memory. Not the separate `⌫` button. |
@@ -22,7 +23,7 @@ Open `index.html`; keyboard and on-screen button input can be mixed.
 ## Operating notes
 
 - Operators evaluate left to right: `2 + 3 * 4 =` gives `20`, not `14`.
-- `%`/`k` can negate a pending right operand: `200 + 10 % =` gives `190`.
+- `%` converts a pending right operand: `200 + 10 % =` gives `200.1`.
 - Square root can reuse the saved result after Escape/DEL; AC and full reset
   forget it. With no saved result and a blank entry, `r` does nothing.
 - Short AC clears calculation/history but keeps memory; holding AC for 700 ms
