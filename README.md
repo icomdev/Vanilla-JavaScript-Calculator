@@ -20,7 +20,7 @@ Open `index.html` in a browser to use the calculator.
 | `7` | Adds 7 to the current number. |
 | `8` | Adds 8 to the current number. |
 | `9` | Adds 9 to the current number. |
-| `%` | Toggles the sign of the current entry or displayed result; each press toggles again (200 + 10 % = 190). Empty entries, zero, and errors are unchanged. This key does not divide by 100. |
+| `%` | Divides the current entry or result by 100 on each press (200 + 10 % = 200.1). Disabled when the entry is empty or shows an error. |
 | `=` | Shows the result; press again to repeat the last operator and operand on the displayed value (e.g. `5 + 3 = =` gives `11`). |
 | `AC` | Clears both numbers, the selected operator, and the remembered operation for repeated equals. Hold for 700 ms to also clear memory. |
 | `DEL` | Removes the last character of the current number. |
@@ -61,7 +61,7 @@ into an immediate memory reset.
 Other keys are ignored. Shortcuts using Ctrl, Command, or Alt are left to the browser.
 Shift is allowed (for example, to type `+` or `%`); `Shift+Escape` performs the
 full reset listed above. Text fields, editable content, and IME composition are
-left alone. There are no dedicated shortcuts for memory or the `+/-` sign toggle.
+left alone. There are no dedicated shortcuts for memory; `k` activates `+/-`.
 `Backspace` invokes `⌫`; the separate `DEL` button keeps its existing behavior.
 
 ## Troubleshooting
