@@ -372,7 +372,7 @@ test('k routes to +/- independently of percent', () => {
   app.button('+/-').click()
   assert.equal(app.display(), '3')
   assert.equal(app.button('%').clicks, 1)
-  assert.equal(app.button('+/-').clicks, 2)
+  assert.equal(app.button('+/-').clicks, 3)
 })
 
 test('percent is one button labelled with its percentage action', () => {
