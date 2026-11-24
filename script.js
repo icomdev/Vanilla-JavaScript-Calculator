@@ -307,7 +307,7 @@ class Calculator {
     // Keep the badge in sync after every action, including recall and full clear.
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
-    if (percentButton) percentButton.disabled = this.errorMessage !== '' || this.currentOperand === ''
+    if (percentButton) percentButton.disabled = this.errorMessage !== '' || this.currentOperand === '' || !Number.isFinite(Number(this.currentOperand))
     if (this.historyCopyButton) {
       this.historyCopyButton.disabled = this.sessionHistory.length === 0
       if (this.historyCopyButton.disabled) {
