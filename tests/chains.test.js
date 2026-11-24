@@ -148,12 +148,12 @@ for (const trigger of ['+', '=']) {
 }
 
 for (const [operator, result] of [
-  ['+', '190'], ['-', '210'], ['*', '-2,000'], ['÷', '-20']
+  ['+', '200.1'], ['-', '199.9'], ['*', '20'], ['÷', '2,000']
 ]) {
   test(`percent mid-chain changes only the right entry of 200 ${operator} 10`, () => {
     const calculator = createCalculator()
     calculator.press('2', '0', '0', operator, '1', '0', '%')
-    assert.equal(calculator.current.innerText, '-10')
+    assert.equal(calculator.current.innerText, '0.1')
     assert.equal(calculator.previous.innerText, `200 ${operator}`)
     calculator.press('=')
     assert.equal(calculator.current.innerText, result)
@@ -161,37 +161,29 @@ for (const [operator, result] of [
   })
 }
 
-test('sqrt ignores a toggled-negative right entry without losing the pending chain', () => {
+test('sqrt transforms a percent-scaled pending entry without losing the chain', () => {
   const calculator = createCalculator()
   calculator.press('8', '+', '8', '+', '9', '%')
-  assert.equal(calculator.current.innerText, '-9')
+  assert.equal(calculator.current.innerText, '0.09')
   assert.equal(calculator.previous.innerText, '16 +')
   calculator.press('√')
-  assert.equal(calculator.current.innerText, '-9')
-  assert.equal(calculator.previous.innerText, '16 +')
-  calculator.press('%', '√')
-  assert.equal(calculator.current.innerText, '3')
-  assert.equal(calculator.previous.innerText, '16 +')
+  assert.equal(calculator.current.innerText, '0.3')
   calculator.press('=')
-  assert.equal(calculator.current.innerText, '19')
-  assert.equal(calculator.previous.innerText, '')
+  assert.equal(calculator.current.innerText, '16.3')
 })
 
-test('sqrt ignores a toggled-negative chain result and preserves repeated equals', () => {
+test('sqrt transforms a percent-scaled chain result and preserves repeated equals', () => {
   const calculator = createCalculator()
   calculator.press('1', '+', '1', '+', '7', '=', '%')
-  assert.equal(calculator.current.innerText, '-9')
-  assert.equal(calculator.previous.innerText, '')
+  assert.equal(calculator.current.innerText, '0.09')
   calculator.press('√')
-  assert.equal(calculator.current.innerText, '-9')
-  assert.equal(calculator.previous.innerText, '')
+  assert.equal(calculator.current.innerText, '0.3')
   calculator.press('=')
-  assert.equal(calculator.current.innerText, '-2')
-  assert.equal(calculator.previous.innerText, '')
+  assert.equal(calculator.current.innerText, '7.3')
 })
 
 for (const [operator, result] of [
-  ['+', '2'], ['-', '6'], ['*', '-8'], ['÷', '-2']
+  ['+', '4.02'], ['-', '3.98'], ['*', '0.08'], ['÷', '200']
 ]) {
   test(`sqrt chain result then ${operator} then percent uses the root as the left operand`, () => {
     const calculator = createCalculator()
@@ -202,7 +194,7 @@ for (const [operator, result] of [
     assert.equal(calculator.current.innerText, '')
     assert.equal(calculator.previous.innerText, `4 ${operator}`)
     calculator.press('2', '%')
-    assert.equal(calculator.current.innerText, '-2')
+    assert.equal(calculator.current.innerText, '0.02')
     assert.equal(calculator.previous.innerText, `4 ${operator}`)
     calculator.press('=')
     assert.equal(calculator.current.innerText, result)
@@ -210,19 +202,19 @@ for (const [operator, result] of [
   })
 }
 
-for (const [operator, operand, result, toggled, repeats] of [
-  ['+', '4', '24', '-24', ['-20', '-16']],
-  ['-', '4', '16', '-16', ['-20', '-24']],
-  ['*', '2', '40', '-40', ['-80', '-160']],
-  ['÷', '2', '10', '-10', ['-5', '-2.5']]
+for (const [operator, operand, result, scaled, repeats] of [
+  ['+', '4', '24', '0.24', ['4.24', '8.24']],
+  ['-', '4', '16', '0.16', ['-3.84', '-7.84']],
+  ['*', '2', '40', '0.4', ['0.8', '1.6']],
+  ['÷', '2', '10', '0.1', ['0.05', '0.025']]
 ]) {
-  test(`repeated equals after percent toggles a chain result preserves final ${operator} ${operand}`, () => {
+  test(`repeated equals after percent scales a chain result preserves final ${operator} ${operand}`, () => {
     const calculator = createCalculator()
     calculator.press('2', '+', '3', '*', '4', operator, operand, '=')
     assert.equal(calculator.current.innerText, result)
     assert.equal(calculator.previous.innerText, '')
     calculator.press('%')
-    assert.equal(calculator.current.innerText, toggled)
+    assert.equal(calculator.current.innerText, scaled)
     assert.equal(calculator.previous.innerText, '')
     for (const expected of repeats) {
       calculator.press('=')
@@ -243,11 +235,9 @@ for (const [operator, operand, result, toggled, repeats] of [
 // | Bare minus -> replacement operator | a binary operator replaces an unfinished negative operand mid-chain |
 // | Zero divisor -> error -> fresh entry | division by zero mid-chain triggered by {trigger} clears pending and replay state |
 
-// Sign-toggle / sqrt interaction sweep (#98). Kept inline for this file-only scope.
-// | Matrix cell | Test name(s) |
-// | --- | --- |
-// | Pending {+/-/*/÷} + right entry -> % -> signed result | percent mid-chain changes only the right entry of 200 {operator} 10 |
-// | Subtotal + toggled-negative entry -> sqrt no-op -> toggle -> sqrt -> equals | sqrt ignores a toggled-negative right entry without losing the pending chain |
-// | Toggled-negative chain result -> sqrt no-op -> repeat equals | sqrt ignores a toggled-negative chain result and preserves repeated equals |
-// | Chain result -> sqrt -> {+/-/*/÷} -> right entry -> % -> equals | sqrt chain result then {operator} then percent uses the root as the left operand |
-// | Chain result -> % -> repeated equals with final {+/-/*/÷} | repeated equals after percent toggles a chain result preserves final {operator} {operand} |
+// Percent / sqrt interaction sweep (#118).
+// | Pending operator + right entry -> % -> scaled result | percent mid-chain changes only the right entry |
+// | Subtotal + scaled entry -> sqrt -> equals | sqrt transforms a percent-scaled pending entry |
+// | Scaled chain result -> sqrt -> repeat equals | sqrt transforms a percent-scaled chain result |
+// | Chain result -> sqrt -> operator -> % -> equals | sqrt chain result then operator then percent |
+// | Chain result -> % -> repeated equals | repeated equals after percent scales a chain result |

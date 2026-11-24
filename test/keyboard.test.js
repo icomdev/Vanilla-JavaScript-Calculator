@@ -140,7 +140,7 @@ test('percent key reuses the button handler, including repeated presses', () => 
   for (const app of [keyboard, pointer]) {
     for (const key of ['2', '0', '0', '+', '1', '0']) app.key(key)
   }
-  for (const expected of ['-10', '10']) {
+  for (const expected of ['0.1', '0.001']) {
     assert.equal(keyboard.key('%', { shiftKey: true }), true)
     pointer.button('%').click()
     assert.equal(keyboard.display(), expected)
@@ -229,7 +229,7 @@ test('every mapped key focuses its corresponding button', () => {
   const app = setup()
   for (const [key, label] of [
     ...[...'0123456789.+-*%'].map(key => [key, key]),
-    ['k', '%'], ['r', '√'], ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
+    ['k', '+/-'], ['r', '√'], ['/', '÷'], ['÷', '÷'], ['Enter', '='], ['=', '='],
     ['Backspace', '⌫'], ['c', 'AC'], ['C', 'AC'], ['Escape', 'AC']
   ]) {
     app.key(key)
@@ -299,121 +299,87 @@ test('Shift+Escape recovers from an error and removes stored memory', () => {
 })
 
 for (const path of ['keyboard', 'button']) {
-  test(`${path} percent toggles once per activation, including results`, () => {
+  test(`${path} percent divides entries and results by 100`, () => {
     const app = setup()
-    const toggle = () => {
-      if (path === 'keyboard') {
-        assert.equal(app.key('k'), true)
-        assert.equal(app.focused(), app.button('%'))
-      } else app.button('%').click()
-    }
+    const percent = () => path === 'keyboard' ? app.key('%') : app.button('%').click()
     for (const key of '12.50') app.key(key)
-    for (const expected of ['-12.50', '12.50', '-12.50']) {
-      toggle()
-      assert.equal(app.display(), expected)
-    }
+    percent()
+    assert.equal(app.display(), '0.125')
+    percent()
+    assert.equal(app.display(), '0.00125')
     app.button('AC').click()
     for (const key of ['8', '+', '2', '=']) app.key(key)
     app.button('M+').click()
-    for (const expected of ['-10', '10', '-10']) {
-      toggle()
-      assert.equal(app.display(), expected)
-      assert.equal(app.history(), '8+2=10')
-    }
-    app.key('Escape')
-    app.key('r')
-    assert.equal(app.display(), '') // remembered result is negative too
+    percent()
+    assert.equal(app.display(), '0.1')
+    assert.equal(app.history(), '8+2=10')
     app.button('MR').click()
-    assert.equal(app.display(), '10') // memory was not negated
+    assert.equal(app.display(), '10')
   })
 
-  test(`${path} percent preserves unfinished, zero, pending and error states`, () => {
+  test(`${path} percent leaves empty, pending-empty and error states unchanged`, () => {
     const app = setup()
-    const toggle = () => path === 'keyboard' ? app.key('k') : app.button('%').click()
-    toggle()
+    const percent = () => path === 'keyboard' ? app.key('%') : app.button('%').click()
+    percent()
     assert.equal(app.display(), '')
     app.key('-')
-    toggle()
+    percent()
     assert.equal(app.display(), '-')
-    app.key('0')
-    toggle()
-    assert.equal(app.display(), '-0')
     app.button('AC').click()
     for (const key of ['8', '+']) app.key(key)
-    toggle()
+    percent()
     assert.equal(app.previous(), '8 +')
     assert.equal(app.display(), '')
     app.key('2')
-    toggle()
+    percent()
     assert.equal(app.previous(), '8 +')
-    assert.equal(app.display(), '-2')
+    assert.equal(app.display(), '0.02')
     for (const key of ['=', '/', '0', '=']) app.key(key)
-    toggle()
+    percent()
     assert.equal(app.display(), 'Cannot divide by zero')
   })
+
+  for (const [operator, expected] of [['+', '8.02'], ['-', '7.98'], ['*', '0.16'], ['÷', '400']]) {
+    test(`${path} percent transforms pending ${operator} entry before equals`, () => {
+      const app = setup()
+      for (const key of ['8', operator, '2']) app.key(key)
+      if (path === 'keyboard') app.key('%')
+      else app.button('%').click()
+      assert.equal(app.display(), '0.02')
+      assert.equal(app.previous(), `8 ${operator}`)
+      app.key('Enter')
+      assert.equal(app.display(), expected)
+      assert.equal(app.history(), `8${operator}0.02=${expected}`)
+    })
+  }
 }
 
-test('mixed k/%/button presses toggle and preserve repeated equals and fresh digits', () => {
+test('k routes to +/- independently of percent', () => {
   const app = setup()
   for (const key of ['8', '+', '2', '=']) app.key(key)
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
     assert.equal(app.key('k', { [modifier]: true }), false)
     assert.equal(app.display(), '10')
   }
-  app.key('k')
-  assert.equal(app.display(), '-10')
-  app.key('%', { shiftKey: true })
+  app.key('k') // +/- is inactive on a result
+  assert.equal(app.focused(), app.button('+/-'))
   assert.equal(app.display(), '10')
-  app.button('%').click()
-  assert.equal(app.display(), '-10')
-  assert.equal(app.button('%').clicks, 3)
-  app.key('=')
-  assert.equal(app.display(), '-8')
+  app.key('%', { shiftKey: true })
+  assert.equal(app.display(), '0.1')
   app.key('3')
+  app.key('k')
+  assert.equal(app.display(), '-3')
+  app.button('+/-').click()
   assert.equal(app.display(), '3')
+  assert.equal(app.button('%').clicks, 1)
+  assert.equal(app.button('+/-').clicks, 2)
 })
 
-for (const path of ['keyboard', 'button']) {
-  for (const [operator, expected] of [['+', '6'], ['-', '10'], ['*', '-16'], ['÷', '-4']]) {
-    test(`${path} percent transforms pending ${operator} entry before equals`, () => {
-      const app = setup()
-      for (const key of ['8', operator, '2']) app.key(key)
-      if (path === 'keyboard') app.key('k')
-      else app.button('%').click()
-      assert.equal(app.display(), '-2')
-      assert.equal(app.previous(), `8 ${operator}`)
-      app.key('Enter')
-      assert.equal(app.display(), expected)
-      assert.equal(app.history(), `8${operator}-2=${expected}`)
-    })
-  }
-
-  test(`${path} percent composes with square root and trailing-decimal editing`, () => {
-    const app = setup()
-    const toggle = () => path === 'keyboard' ? app.key('k') : app.button('%').click()
-    for (const key of '12.') app.key(key)
-    toggle()
-    assert.equal(app.display(), '-12.')
-    app.key('5')
-    assert.equal(app.display(), '-12.5')
-    app.button('AC').click()
-    app.key('9')
-    toggle()
-    app.key('r')
-    assert.equal(app.display(), '-9')
-    toggle()
-    app.key('r')
-    assert.equal(app.display(), '3')
-    toggle()
-    assert.equal(app.display(), '-3')
-  })
-}
-
-test('percent has one button labelled with its sign-toggle action', () => {
+test('percent is one button labelled with its percentage action', () => {
   const html = readFileSync(`${__dirname}/../index.html`, 'utf8')
   const buttons = [...html.matchAll(/<button\b[^>]*\bdata-percent\b[^>]*>%<\/button>/g)]
   assert.equal(buttons.length, 1)
-  assert.match(buttons[0][0], /aria-label="Toggle sign"/)
+  assert.match(buttons[0][0], /aria-label="Percent"/)
 })
 
 // AC alias matrix: case/Shift × calculation state × short/held activation.
