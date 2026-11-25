@@ -10,11 +10,20 @@ body {
   background: linear-gradient(to right, #00AAFF, #00FF6C);
 }
 
+.calculator-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
 .calculator-grid {
   display: grid;
   justify-content: center;
   align-content: center;
-  min-height: 100vh;
+  flex: 0 0 400px;
   grid-template-columns: repeat(4, 100px);
   grid-template-rows: minmax(120px, auto) repeat(6, 100px);
 }
@@ -109,4 +118,81 @@ body {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.ledger-panel {
+  width: 320px;
+  max-width: 100%;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, .75);
+  color: white;
+}
+
+.ledger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ledger-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.ledger-header button {
+  cursor: pointer;
+  padding: .5rem;
+}
+
+.ledger-header button:disabled {
+  cursor: default;
+}
+
+.ledger-list {
+  height: 420px;
+  overflow-y: auto;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style-position: inside;
+  overflow-wrap: anywhere;
+}
+
+.ledger-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .25);
+}
+
+.ledger-empty {
+  color: rgba(255, 255, 255, .75);
+}
+
+.ledger-list:focus-visible,
+.ledger-header button:focus-visible {
+  outline: 3px solid #00AAFF;
+  outline-offset: 2px;
+}
+
+@media (max-width: 780px) {
+  .calculator-layout {
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .calculator-grid {
+    flex: none;
+    width: 100%;
+    max-width: 400px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: minmax(120px, auto) repeat(6, 80px);
+  }
+
+  .ledger-panel {
+    width: 400px;
+  }
+
+  .ledger-list {
+    height: 240px;
+  }
 }

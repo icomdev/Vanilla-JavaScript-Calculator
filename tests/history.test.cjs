@@ -109,7 +109,7 @@ test('history panel has one native Copy button initially disabled', () => {
   assert.match(html, /data-copy-panel[\s\S]*data-history[\s\S]*data-history-copy[\s\S]*<\/div>/)
 })
 
-test('empty history disables copy until completed equals; AC disables and resets confirmation', async () => {
+test('empty ledger disables copy; clear-ledger resets confirmation', async () => {
   const app = setup()
   assert.equal(app.button().disabled, true)
   await app.click('[data-history-copy]')
@@ -121,12 +121,12 @@ test('empty history disables copy until completed equals; AC disables and resets
   app.click('[data-equals]')
   assert.equal(app.button().disabled, false)
   await app.click('[data-history-copy]')
-  app.click('[data-all-clear]')
+  app.run('calculator.clearLedger(); calculator.updateDisplay()')
   assert.equal(app.button().disabled, true)
   assert.equal(app.button().innerText, 'Copy')
   app.complete('4', '*', '2')
   await app.click('[data-history-copy]')
-  assert.equal(app.writes.at(-1), '4*2 = 8')
+  assert.equal(app.writes.at(-1), '4 * 2 = 8')
 })
 
 for (const path of ['clipboard', 'unavailable', 'rejected', 'throws']) {
@@ -143,7 +143,7 @@ for (const path of ['clipboard', 'unavailable', 'rejected', 'throws']) {
     const snapshot = 'JSON.stringify([calculator.currentOperand, calculator.previousOperand, calculator.operation, calculator.history, calculator.memory, calculator.lastOperation, calculator.lastOperand])'
     const before = app.run(snapshot)
     await app.click('[data-history-copy]')
-    assert.deepEqual(app.writes, ['12+7 = 19\n2.50*-4 = -10'])
+    assert.deepEqual(app.writes, ['12 + 7 = 19\n2.50 * -4 = -10\n-10 * -4 = 40'])
     assert.equal(app.text('[data-history]'), '2.50*-4=-10')
     assert.equal(app.run(snapshot), before)
     assert.equal(app.button().innerText, 'Copied')
@@ -187,25 +187,27 @@ test('clearing while clipboard is pending cannot restore stale confirmation', as
   const app = setup({ navigator: { clipboard: { writeText: () => new Promise(done => { resolve = done }) } } })
   app.complete()
   const copying = app.click('[data-history-copy]')
-  app.click('[data-all-clear]')
+  app.run('calculator.clearLedger(); calculator.updateDisplay()')
   resolve()
   await copying
   assert.equal(app.button().disabled, true)
   assert.equal(app.button().innerText, 'Copy')
 })
 
-test('editing, memory, sqrt and chaining preserve session; errors and full reset clear it', async () => {
+test('editing, memory, errors and full reset preserve ledger; chaining appends subtotals', async () => {
   const app = setup()
   app.complete('4', '+', '5')
   app.run("calculator.clearEntry(); calculator.sqrt(); calculator.addToMemory(); calculator.recallMemory(); calculator.chooseOperation('+'); calculator.appendNumber('2'); calculator.chooseOperation('*'); calculator.appendNumber('3')")
   app.click('[data-equals]')
   await app.click('[data-history-copy]')
-  assert.deepEqual(app.writes, ['4+5 = 9\n5*3 = 15'])
+  assert.deepEqual(app.writes, ['4 + 5 = 9\n3 + 2 = 5\n5 * 3 = 15'])
   app.complete('1', '÷', '0')
-  assert.equal(app.button().disabled, true)
+  assert.equal(app.button().disabled, false)
   app.run('calculator.clear()')
   app.complete()
   app.run('calculator.fullClear(); calculator.updateDisplay()')
+  assert.equal(app.button().disabled, false)
+  app.run('calculator.clearLedger(); calculator.updateDisplay()')
   assert.equal(app.button().disabled, true)
   await app.click('[data-history-copy]')
   assert.equal(app.writes.length, 1)
