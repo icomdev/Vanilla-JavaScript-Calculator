@@ -89,7 +89,9 @@ vary by browser/OS. Use the plain keys in [Keyboard](#keyboard).
 
 ## Layout
 
-The current grid has **4 columns**, not 5 columns × 5 rows. The display spans
+The calculator sits beside a calculation ledger on wide screens; on narrow
+screens the ledger moves below it. The calculator grid has **4 columns**, not
+5 columns × 5 rows. The display spans
 all four columns. CSS defines six button-row tracks; auto-placement adds a
 seventh row for `=`. The `0` button occupies one cell (no zero-span); `=` spans
 two columns. This sketch reflects the actual HTML/CSS, not a proposed redesign:
@@ -147,17 +149,24 @@ The suites run the real script in Node's VM with lightweight DOM stubs:
 - `tests/decimal.test.js`: decimal guards, arithmetic, deletion, and result editing.
 - `tests/history.test.js` and `tests/history.test.cjs`: expression recording,
   replacement, preservation while editing/chaining, and clearing.
+- `tests/ledger.test.js`: ledger rendering, ordered appends, mouse/keyboard parity,
+  scroll behavior, independent clearing, and calculator-clear/error preservation.
 - `tests/memory.test.cjs`: memory add/recall/clear, indicator state, pending
   operations, and invalid or non-finite entries.
 
 No dependencies or build step are needed. These are logic/event-handler tests,
 not browser rendering or visual tests.
 
-### Copy session history
+### Calculation ledger and Copy
 
-The small **Copy** button beside history copies all completed expressions in the
-current session, oldest first, as one `expression = result` per line. It is
-disabled until there is history and shows **Copied** for about one second after
-success. It uses the Clipboard API with a textarea fallback where unavailable or
-denied. AC, full reset, and division by zero also clear the copyable session;
-entry-only Escape preserves it. History is not saved across page reloads.
+The side ledger records every successful binary calculation, including chained
+subtotals and repeated equals, oldest first. It scrolls when new results arrive;
+the list can also be focused and scrolled with a keyboard. **AC/C**, Escape,
+division by zero, and full reset clear the active calculation but leave the
+ledger intact. Only **Clear ledger** deletes its entries. Entries are not saved
+across page reloads.
+
+The **Copy** button beside the last-expression line copies the ledger, one
+`left operator right = result` per line, oldest first. It is disabled until
+there are entries and shows **Copied** for about one second after a successful
+copy. A textarea fallback works when the Clipboard API is unavailable or denied.

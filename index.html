@@ -11,42 +11,52 @@
   <script src="script.js" defer></script>
 </head>
 <body>
-  <div class="calculator-grid" role="group" aria-label="Calculator">
-    <div class="output">
-      <span data-memory-indicator class="memory-indicator" role="img" aria-label="Memory state" title="Memory contains a value" hidden>● M</span>
-      <div data-copy-panel class="history-panel">
-        <div data-history class="history" role="group" aria-label="History"></div>
-        <button data-history-copy type="button" disabled>Copy</button>
+  <main class="calculator-layout">
+    <div class="calculator-grid" role="group" aria-label="Calculator">
+      <div class="output">
+        <span data-memory-indicator class="memory-indicator" role="img" aria-label="Memory state" title="Memory contains a value" hidden>● M</span>
+        <div data-copy-panel class="history-panel">
+          <div data-history class="history" role="group" aria-label="History"></div>
+          <button data-history-copy type="button" disabled>Copy</button>
+        </div>
+        <div data-previous-operand class="previous-operand"></div>
+        <div data-current-operand class="current-operand"></div>
       </div>
-      <div data-previous-operand class="previous-operand"></div>
-      <div data-current-operand class="current-operand"></div>
+      <div data-announcements class="announcements" aria-live="polite" aria-atomic="true"></div>
+      <button data-memory-add aria-label="Add to memory">M+</button>
+      <button data-memory-recall aria-label="Recall memory">MR</button>
+      <button data-memory-clear aria-label="Clear memory">MC</button>
+      <button data-percent aria-label="Toggle sign">%</button>
+      <button data-all-clear aria-label="All clear" title="Clear calculation; hold for 700 ms to also clear memory">AC</button>
+      <button data-delete aria-label="Delete last digit">DEL</button>
+      <button data-sign-toggle aria-label="Negate">+/-</button>
+      <button data-sqrt aria-label="Square root">√</button>
+      <button data-operation aria-label="Divide">÷</button>
+      <button data-number>1</button>
+      <button data-number>2</button>
+      <button data-number>3</button>
+      <button data-operation aria-label="Multiply">*</button>
+      <button data-number>4</button>
+      <button data-number>5</button>
+      <button data-number>6</button>
+      <button data-operation aria-label="Add">+</button>
+      <button data-number>7</button>
+      <button data-number>8</button>
+      <button data-number>9</button>
+      <button data-operation aria-label="Subtract">-</button>
+      <button data-number aria-label="Decimal point">.</button>
+      <button data-number>0</button>
+      <button data-backspace aria-label="Backspace">⌫</button>
+      <button data-equals class="span-two" aria-label="Equals">=</button>
     </div>
-    <div data-announcements class="announcements" aria-live="polite" aria-atomic="true"></div>
-    <button data-memory-add aria-label="Add to memory">M+</button>
-    <button data-memory-recall aria-label="Recall memory">MR</button>
-    <button data-memory-clear aria-label="Clear memory">MC</button>
-    <button data-percent aria-label="Toggle sign">%</button>
-    <button data-all-clear aria-label="All clear" title="Clear calculation; hold for 700 ms to also clear memory">AC</button>
-    <button data-delete aria-label="Delete last digit">DEL</button>
-    <button data-sign-toggle aria-label="Negate">+/-</button>
-    <button data-sqrt aria-label="Square root">√</button>
-    <button data-operation aria-label="Divide">÷</button>
-    <button data-number>1</button>
-    <button data-number>2</button>
-    <button data-number>3</button>
-    <button data-operation aria-label="Multiply">*</button>
-    <button data-number>4</button>
-    <button data-number>5</button>
-    <button data-number>6</button>
-    <button data-operation aria-label="Add">+</button>
-    <button data-number>7</button>
-    <button data-number>8</button>
-    <button data-number>9</button>
-    <button data-operation aria-label="Subtract">-</button>
-    <button data-number aria-label="Decimal point">.</button>
-    <button data-number>0</button>
-    <button data-backspace aria-label="Backspace">⌫</button>
-    <button data-equals class="span-two" aria-label="Equals">=</button>
-  </div>
+  <aside class="ledger-panel" aria-labelledby="ledger-heading">
+    <div class="ledger-header">
+      <h2 id="ledger-heading">Calculation ledger</h2>
+      <button data-ledger-clear type="button" disabled>Clear ledger</button>
+    </div>
+    <p data-ledger-empty class="ledger-empty">Completed calculations will appear here.</p>
+    <ol data-ledger class="ledger-list" tabindex="0" aria-label="Completed calculations"></ol>
+  </aside>
+  </main>
 </body>
 </html>

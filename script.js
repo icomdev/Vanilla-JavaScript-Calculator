@@ -18,17 +18,17 @@ class Calculator {
     this.historyTextElement = historyTextElement
     this.historyCopyButton = historyCopyButton
     this.memory = 0
+    this.sessionHistory = []
     this.clear()
   }
 
   /**
-   * Reset operands, operation, history, errors, and repeated-equals state.
-   * Preserve memory; rendering is left to updateDisplay().
+   * Reset operands, operation, last-expression display, errors, and repeat state.
+   * Preserve memory and the calculation ledger; rendering is left to updateDisplay().
    * @returns {void}
    */
   clear() {
     this.history = ''
-    this.sessionHistory = []
     this.lastResult = undefined
     this.currentOperand = ''
     this.previousOperand = ''
@@ -37,6 +37,12 @@ class Calculator {
     this.errorMessage = ''
     this.lastOperation = undefined
     this.lastOperand = undefined
+  }
+
+  /** Clear only the ledger, preserving the current calculation and memory. */
+  clearLedger() {
+    this.sessionHistory = []
+    this.pendingAnnouncement = 'Ledger cleared'
   }
 
   /**
@@ -266,8 +272,12 @@ class Calculator {
     this.lastOperand = current
     if (recordHistory && !repeating) {
       this.history = `${this.previousOperand}${this.operation}${this.currentOperand}=${computation}`
-      this.sessionHistory.push(`${this.previousOperand}${this.operation}${this.currentOperand} = ${computation}`)
     }
+    // Every successful binary calculation is a ledger entry, including
+    // subtotals computed by operator chaining and repeated equals.
+    const left = repeating ? this.currentOperand : this.previousOperand
+    const right = repeating ? current : this.currentOperand
+    this.sessionHistory.push(`${left} ${operation} ${right} = ${computation}`)
     this.currentOperand = computation
     this.lastResult = computation
     this.operation = undefined
@@ -299,6 +309,25 @@ class Calculator {
     }
   }
 
+  /** Append new ledger rows without rebuilding the list or scrolling the page. */
+  updateLedger() {
+    if (!ledgerElement?.appendChild) return
+    if (this.renderedLedger !== this.sessionHistory) {
+      ledgerElement.replaceChildren()
+      this.renderedLedger = this.sessionHistory
+      this.renderedLedgerCount = 0
+    }
+    const hasNewEntries = this.renderedLedgerCount < this.sessionHistory.length
+    while (this.renderedLedgerCount < this.sessionHistory.length) {
+      const entry = document.createElement('li')
+      entry.textContent = this.sessionHistory[this.renderedLedgerCount++]
+      ledgerElement.appendChild(entry)
+    }
+    if (hasNewEntries) ledgerElement.scrollTop = ledgerElement.scrollHeight
+    if (ledgerClearButton) ledgerClearButton.disabled = this.sessionHistory.length === 0
+    if (ledgerEmptyElement) ledgerEmptyElement.hidden = this.sessionHistory.length > 0
+  }
+
   /**
    * Render memory visibility, history, current entry/error, and pending expression.
    * Clear the previous-operand display when no operation is pending.
@@ -308,6 +337,7 @@ class Calculator {
     // Keep the badge in sync after every action, including recall and full clear.
     this.memoryIndicatorElement.hidden = this.memory === 0
     this.historyTextElement.innerText = this.history
+    this.updateLedger()
     if (this.historyCopyButton) {
       this.historyCopyButton.disabled = this.sessionHistory.length === 0
       if (this.historyCopyButton.disabled) {
@@ -366,6 +396,9 @@ const currentOperandTextElement = document.querySelector('[data-current-operand]
 
 const historyTextElement = document.querySelector('[data-history]')
 const historyCopyButton = document.querySelector('[data-history-copy]')
+const ledgerElement = document.querySelectorAll('[data-ledger]')?.[0]
+const ledgerClearButton = document.querySelectorAll('[data-ledger-clear]')?.[0]
+const ledgerEmptyElement = document.querySelectorAll('[data-ledger-empty]')?.[0]
 
 // Shared calculator instance used by all input handlers.
 const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement, memoryIndicatorElement, historyTextElement, historyCopyButton,
@@ -409,7 +442,7 @@ historyCopyButton?.addEventListener('click', async () => {
   } catch {
     // Neither clipboard route succeeded; do not show a false confirmation.
   }
-  // An AC/error reset during an asynchronous copy starts a new session.
+  // Clearing the ledger during an asynchronous copy invalidates confirmation.
   if (!copied || session !== calculator.sessionHistory) return
   if (calculator.copyConfirmationTimer !== undefined) clearTimeout(calculator.copyConfirmationTimer)
   historyCopyButton.innerText = 'Copied'
@@ -417,6 +450,11 @@ historyCopyButton?.addEventListener('click', async () => {
     historyCopyButton.innerText = 'Copy'
     calculator.copyConfirmationTimer = undefined
   }, 1000)
+})
+
+ledgerClearButton?.addEventListener('click', () => {
+  calculator.clearLedger()
+  calculator.updateDisplay()
 })
 
 // Numeric entry and arithmetic operation button events.
@@ -529,8 +567,8 @@ document.addEventListener('keydown', event => {
   const target = event.target
   if (target?.isContentEditable || target?.closest?.('input, textarea, select')) return
 
-  // Let Enter activate Copy natively rather than dispatching equals.
-  if (target === historyCopyButton && event.key === 'Enter') return
+  // Let Enter activate ledger controls natively rather than dispatching equals.
+  if (target && (target === historyCopyButton || target === ledgerClearButton || target === ledgerElement) && event.key === 'Enter') return
 
   const button = keyboardButtons.get(event.key)
   if (!button) return
